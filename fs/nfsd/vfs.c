@@ -1988,6 +1988,8 @@ static __be32 nfsd_buffered_readdir(struct file *file, filldir_t func,
 		.dirent = (void *)__get_free_page(GFP_KERNEL)
 	};
 
+	buf.ctx.actor = nfsd_buffered_filldir;
+	buf.dirent = (void *)__get_free_page(GFP_KERNEL);
 	if (!buf.dirent)
 		return nfserrno(-ENOMEM);
 
