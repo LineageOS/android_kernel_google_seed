@@ -882,10 +882,6 @@ asmlinkage long compat_sys_old_readdir(unsigned int fd,
 	if (!f.file)
 		return -EBADF;
 
-	buf.result = 0;
-	buf.dirent = dirent;
-	buf.ctx.actor = compat_fillonedir;
-
 	error = iterate_dir(f.file, &buf.ctx);
 	if (buf.result)
 		error = buf.result;
@@ -971,12 +967,6 @@ asmlinkage long compat_sys_getdents(unsigned int fd,
 	if (!f.file)
 		return -EBADF;
 
-	buf.current_dir = dirent;
-	buf.previous = NULL;
-	buf.count = count;
-	buf.error = 0;
-	buf.ctx.actor = compat_filldir;
-
 	error = iterate_dir(f.file, &buf.ctx);
 	if (error >= 0)
 		error = buf.error;
@@ -1061,12 +1051,6 @@ asmlinkage long compat_sys_getdents64(unsigned int fd,
 	f = fdget(fd);
 	if (!f.file)
 		return -EBADF;
-
-	buf.current_dir = dirent;
-	buf.previous = NULL;
-	buf.count = count;
-	buf.error = 0;
-	buf.ctx.actor = compat_filldir64;
 
 	error = iterate_dir(f.file, &buf.ctx);
 	if (error >= 0)
