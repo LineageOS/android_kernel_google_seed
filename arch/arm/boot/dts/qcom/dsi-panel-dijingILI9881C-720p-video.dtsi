@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -52,13 +52,13 @@
 			23 01 00 00 01 00 02
 			02 00
 			23 01 00 00 01 00 02
-			03 73
+			03 72
 			23 01 00 00 01 00 02
 			04 00
 			23 01 00 00 01 00 02
 			05 00
 			23 01 00 00 01 00 02
-			06 0A
+			06 09
 			23 01 00 00 01 00 02
 			07 00
 			23 01 00 00 01 00 02
@@ -78,7 +78,7 @@
 			23 01 00 00 01 00 02
 			0F 14
 			23 01 00 00 01 00 02
-			10 14
+			10 14 
 			23 01 00 00 01 00 02
 			11 00
 			23 01 00 00 01 00 02
@@ -90,7 +90,7 @@
 			23 01 00 00 01 00 02
 			15 00
 			23 01 00 00 01 00 02
-			16 00
+			16 00 
 			23 01 00 00 01 00 02
 			17 00
 			23 01 00 00 01 00 02
@@ -110,9 +110,9 @@
 			23 01 00 00 01 00 02
 			1F 80
 			23 01 00 00 01 00 02
-			20 06
+			20 05
 			23 01 00 00 01 00 02
-			21 01
+			21 02
 			23 01 00 00 01 00 02
 			22 00
 			23 01 00 00 01 00 02
@@ -128,7 +128,7 @@
 			23 01 00 00 01 00 02
 			28 33
 			23 01 00 00 01 00 02
-			29 03
+			29 02
 			23 01 00 00 01 00 02
 			2A 00
 			23 01 00 00 01 00 02
@@ -162,7 +162,7 @@
 			23 01 00 00 01 00 02
 			39 00
 			23 01 00 00 01 00 02
-			3A 40
+			3A 40 
 			23 01 00 00 01 00 02
 			3B 40
 			23 01 00 00 01 00 02
@@ -459,10 +459,13 @@
 		qcom,mdss-dsi-pwm-gpio = <&pm8916_mpps 4 0>;
 		qcom,mdss-dsi-reset-sequence = <1 20>, <0 10>, <1 20>;
 
+		//add lcd esd
 		qcom,mdss-dsi-panel-status-command = [06 01 00 01 05 00 02 0A 08];
 		qcom,mdss-dsi-panel-status-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-panel-status-check-mode = "reg_read";
 		qcom,mdss-dsi-panel-status-value = <0x9c>;
+		qcom,esd-check-enabled;
+		//esd end
 	};
 };
 
