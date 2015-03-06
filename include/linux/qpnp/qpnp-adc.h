@@ -275,7 +275,7 @@ enum qpnp_adc_scale_fn_type {
 	SCALE_NCP_03WF683_THERM,
 	SCALE_QRD_SKUC_BATT_THERM,
 	SCALE_QRD_SKUE_BATT_THERM,
-	SCALE_QRD_SKUL_BATT_THERM,
+	SCALE_QRD_L8150_BATT_THERM,
 	SCALE_NONE,
 };
 
@@ -1299,7 +1299,7 @@ int32_t qpnp_adc_scale_qrd_skue_batt_therm(struct qpnp_vadc_chip *dev,
 			const struct qpnp_vadc_chan_properties *chan_prop,
 			struct qpnp_vadc_result *chan_rslt);
 /**
- * qpnp_adc_scale_qrd_skul_batt_therm() - Scales the pre-calibrated digital output
+ * qpnp_adc_scale_l8150_batt_therm() - Scales the pre-calibrated digital output
  *		of an ADC to the ADC reference and compensates for the
  *		gain and offset. Returns the temperature in decidegC.
  * @dev:	Structure device for qpnp vadc
@@ -1310,7 +1310,7 @@ int32_t qpnp_adc_scale_qrd_skue_batt_therm(struct qpnp_vadc_chip *dev,
  *		slope and offset.
  * @chan_rslt:	physical result to be stored.
  */
-int32_t qpnp_adc_scale_qrd_skul_batt_therm(struct qpnp_vadc_chip *dev,
+int32_t qpnp_adc_scale_l8150_batt_therm(struct qpnp_vadc_chip *dev,
 			int32_t adc_code,
 			const struct qpnp_adc_properties *adc_prop,
 			const struct qpnp_vadc_chan_properties *chan_prop,
@@ -1750,6 +1750,12 @@ static inline int32_t qpnp_adc_scale_qrd_skuc_batt_therm(
 			struct qpnp_vadc_result *chan_rslt)
 { return -ENXIO; }
 static inline int32_t qpnp_adc_scale_qrd_skue_batt_therm(
+			struct qpnp_vadc_chip *vdev, int32_t adc_code,
+			const struct qpnp_adc_properties *adc_prop,
+			const struct qpnp_vadc_chan_properties *chan_prop,
+			struct qpnp_vadc_result *chan_rslt)
+{ return -ENXIO; }
+static inline int32_t qpnp_adc_scale_l8150_batt_therm(
 			struct qpnp_vadc_chip *vdev, int32_t adc_code,
 			const struct qpnp_adc_properties *adc_prop,
 			const struct qpnp_vadc_chan_properties *chan_prop,
