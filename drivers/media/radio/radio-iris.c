@@ -5128,7 +5128,7 @@ static int iris_fops_release(struct file *file)
 		return -EINVAL;
 
 	if (radio->mode == FM_OFF)
-		return 0;
+		goto END;
 
 	if (radio->mode == FM_RECV) {
 		radio->mode = FM_OFF;
@@ -5142,7 +5142,8 @@ static int iris_fops_release(struct file *file)
 		radio->mode = FM_OFF;
 		return retval;
 	}
-
+END:
+	radio->fm_hdev->close_smd();
 	if (retval < 0)
 		FMDERR("Err on disable FM %d\n", retval);
 
