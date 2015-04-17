@@ -484,7 +484,6 @@ static inline int cpufreq_generic_exit(struct cpufreq_policy *policy)
 	return 0;
 }
 
-
 /*********************************************************************
  *                         CPUFREQ STATS                             *
  *********************************************************************/
