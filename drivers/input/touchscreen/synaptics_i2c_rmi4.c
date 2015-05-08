@@ -38,6 +38,7 @@
 
 #include "synaptics_i2c_rmi4.h"
 #include <linux/input/mt.h>
+#include "lct_tp_fm_info.h"
 
 #define DRIVER_NAME "synaptics_rmi4_i2c"
 #define INPUT_PHYS_NAME "synaptics_rmi4_i2c/input0"
@@ -2591,6 +2592,9 @@ static int synaptics_rmi4_alloc_fh(struct synaptics_rmi4_fn **fhandler,
  * Called by synaptics_rmi4_query_device().
  *
  */
+char id1=0;
+//char id2=0,id3=0,id4=0;
+
 static int synaptics_rmi4_query_device_info(
 					struct synaptics_rmi4_data *rmi4_data)
 {
@@ -2838,6 +2842,42 @@ static int synaptics_rmi4_query_device(struct synaptics_rmi4_data *rmi4_data)
 				if (retval < 0)
 					return retval;
 				break;
+#ifdef SUPPORT_READ_TP_VERSION
+			case SYNAPTICS_RMI4_F34:
+				if (rmi_fd.intr_src_count == 0)
+				break;
+				rmi4_data->f34_ctrl_base_addr =
+					rmi_fd.ctrl_base_addr | (page_number<<8);
+				pr_debug("%s:rmi4_data->f34_ctrl_base_addr =%0x \n",__func__,rmi4_data->f34_ctrl_base_addr);
+				retval = synaptics_rmi4_i2c_read(rmi4_data, rmi4_data->f34_ctrl_base_addr, rmi->fw_config_id, sizeof(rmi->fw_config_id));  //liyong2 2014.1.4
+				if (retval < 0) {
+					pr_err("%s:%d retval=%d\n",__func__,__LINE__,retval);
+					return retval;
+				}
+				rmi4_data->firmware_config_id = (rmi->fw_config_id[0]<<24) | (rmi->fw_config_id[1]<<16) | (rmi->fw_config_id[2]<<8) | rmi->fw_config_id[3];  //liyong2 2014.1.9
+				rmi4_data->fw_cfg_id = (rmi->fw_config_id[0]<<24) | (rmi->fw_config_id[1]<<16) | (rmi->fw_config_id[2]<<8);
+				pr_info("%s:%d firmware config id=0x%08x\n",__func__,__LINE__,rmi4_data->firmware_config_id);
+
+				//baron start
+				retval = synaptics_rmi4_i2c_read(rmi4_data,
+				rmi4_data->f01_query_base_addr + 11,
+				//0x009d,
+				rmi->custom_specific,
+				sizeof(rmi->custom_specific));
+				if (retval < 0) {
+					dev_err(&rmi4_data->i2c_client->dev,
+						"%s: Failed to read firmware build id (code %d)\n",
+										__func__, retval);
+					return retval;
+				}
+				// rmi4_data->custom_specific_id = rmi->custom_specific[0];
+				id1=rmi->custom_specific[0];
+				//   id2=rmi->custom_specific[1];
+				//   id3=rmi->custom_specific[2];
+				//   id4=rmi->custom_specific[3];
+				printk("%s:%d custom_specific_id=0x%x,0x%x,0x%x,0x%x\n",__func__,__LINE__,rmi->custom_specific[0],rmi->custom_specific[1],rmi->custom_specific[2],rmi->custom_specific[3]);
+				//baron end
+#endif
 			}
 
 			/* Accumulate the interrupt count */
@@ -3497,6 +3537,7 @@ err_irq_gpio_req:
  * and creates a work queue for detection of other expansion Function
  * modules.
  */
+char g_Id_save[30]={0};
 static int synaptics_rmi4_probe(struct i2c_client *client,
 		const struct i2c_device_id *dev_id)
 {
@@ -3786,6 +3827,19 @@ static int synaptics_rmi4_probe(struct i2c_client *client,
 			goto err_sysfs;
 		}
 	}
+#ifdef SUPPORT_READ_TP_VERSION
+{
+	char tp_version[60] = {0};
+	sprintf(tp_version, "[fw]%08x,[ic]S2716",rmi4_data->firmware_config_id);
+	// printk("*%s:rmi4_data->f34_ctrl_base_addr =%0x \n",__func__,rmi4_data->f34_ctrl_base_addr);
+	if (rmi4_data->fw_cfg_id == 0x80012000) {
+		init_tp_fm_info(0, tp_version, "boyi");
+	} else {
+		init_tp_fm_info(0, tp_version, "DJ");
+	}
+	strcpy(g_Id_save,tp_version); //baron modify
+}
+#endif
 
 	synaptics_rmi4_sensor_wake(rmi4_data);
 
