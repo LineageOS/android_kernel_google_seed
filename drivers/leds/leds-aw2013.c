@@ -198,6 +198,11 @@ static int aw2013_power_init(struct aw2013_led *led, bool on)
 		}
 
 		if (led->pdata->awgpio > 0) {
+			rc = aw2013_configure_gpio(led, on);
+			if (rc) {
+				dev_dbg(&led->client->dev,
+						"Failed to configure GPIO: %d\n", rc);
+			}
 			gpio_request(led->pdata->awgpio, "aw2013-gpio");
 			gpio_direction_output(led->pdata->awgpio, 1);
 		} else {
