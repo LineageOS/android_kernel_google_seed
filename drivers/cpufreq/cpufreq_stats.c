@@ -610,11 +610,10 @@ static int cpufreq_stat_notifier_policy(struct notifier_block *nb,
 		count++;
 	}
 
-	if (!per_cpu(all_cpufreq_stats, cpu))
-		cpufreq_allstats_create(cpu, table, count);
-
-	if (!per_cpu(cpufreq_power_stats, cpu))
-		cpufreq_powerstats_create(cpu, table, count);
+	for_each_possible_cpu(cpu_num) {
+		if (!per_cpu(cpufreq_power_stats, cpu_num))
+			cpufreq_powerstats_create(cpu_num, table, count);
+	}
 
 	if (val == CPUFREQ_CREATE_POLICY)
 		ret = __cpufreq_stats_create_table(policy, table, count);
