@@ -267,7 +267,11 @@ config SND_SOC_MSM8994
 	select SND_SOC_MSM_HDMI_CODEC_RX
 	select QTI_PP
 	select SND_SOC_CPE
+<<<<<<< HEAD
 	select MSM_ULTRASOUND
+=======
+	select DOLBY_DS2
+>>>>>>> 5f41603... Kconfig: msm: disable ultrasound driver
 	select SND_HWDEP
 	help
 	 To add support for SoC audio on MSM8994.
