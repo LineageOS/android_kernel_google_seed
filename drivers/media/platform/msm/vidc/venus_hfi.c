@@ -4220,9 +4220,10 @@ static int venus_hfi_get_fw_info(void *dev, struct hal_fw_info *fw_info)
 	const u32 version_string_size = VENUS_VERSION_LENGTH;
 	const u32 smem_image_index_venus = 14 * 128;
 
-	if (!device) {
-		dprintk(VIDC_ERR, "%s Invalid paramter: %pK\n",
-			__func__, device);
+	if (!device || !fw_info) {
+		dprintk(VIDC_ERR,
+			"%s Invalid paramter: device = %p fw_info = %p\n",
+				__func__, device, fw_info);
 		return -EINVAL;
 	}
 
