@@ -2182,6 +2182,208 @@ static int hdd_set_dwell_time(hdd_adapter_t *pAdapter, tANI_U8 *command)
 
     return ret;
 }
+static int hdd_cmd_setFccChannel(hdd_context_t *pHddCtx, tANI_U8 *cmd,
+                                                                 tANI_U8 cmd_len)
+{
+    tANI_U8 *value;
+    tANI_U8 fcc_constraint;
+
+    eHalStatus status;
+    int ret = 0;
+    value =  cmd + cmd_len + 1;
+
+    ret = kstrtou8(value, 10, &fcc_constraint);
+    if ((ret < 0) || (fcc_constraint > 1)) {
+       /*
+        *  If the input value is greater than max value of datatype,
+        *  then also it is a failure
+        */
+        hddLog(VOS_TRACE_LEVEL_ERROR,
+        "%s: value out of range", __func__);
+        return -EINVAL;
+    }
+
+    status = sme_handleSetFccChannel(pHddCtx->hHal, fcc_constraint,
+                                     pHddCtx->scan_info.mScanPending);
+    if (status != eHAL_STATUS_SUCCESS)
+        ret = -EPERM;
+
+    return ret;
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief hdd_enable_disable_ca_event() - When Host sends IOCTL (enabled),
+         FW will send *ONE* CA ind to Host(even though it is duplicate).
+         When Host send IOCTL (disable), FW doesn't perform any action.
+         Whenever any change in CA *and* WLAN is in SAP/P2P-GO mode, FW
+         sends CA ind to host. (regard less of IOCTL status)
+  \param  - pHddCtx - HDD context
+  \param  - command - command received from framework
+  \param  - cmd_len - len of the command
+
+  \return - 0 on success, appropriate error values on failure.
+
+  --------------------------------------------------------------------------*/
+int hdd_enable_disable_ca_event(hdd_context_t *pHddCtx, tANI_U8* command, tANI_U8 cmd_len)
+{
+   tANI_U8 set_value;
+   int ret = 0;
+   eHalStatus status;
+
+   ret = wlan_hdd_validate_context(pHddCtx);
+   if (0 != ret)
+   {
+       ret = -EINVAL;
+       goto exit;
+   }
+
+   if (pHddCtx->cfg_ini->gOptimizeCAevent == 0)
+   {
+       hddLog(VOS_TRACE_LEVEL_ERROR, "Enable gOptimizeCAevent"
+             " ini param to control channel avooidance indication");
+       ret = 0;
+       goto exit;
+   }
+
+   set_value = command[cmd_len + 1] - '0';
+   status = sme_enableDisableChanAvoidIndEvent(pHddCtx->hHal, set_value);
+   if (status != eHAL_STATUS_SUCCESS)
+   {
+       hddLog(VOS_TRACE_LEVEL_ERROR, "%s: Failed to send"
+             " enableDisableChanAoidance command to SME\n", __func__);
+       ret = -EINVAL;
+   }
+
+exit:
+   return ret;
+}
+
+/**
+ * wlan_hdd_fastreassoc_handoff_request() - Post Handoff request to SME
+ * @pHddCtx: Pointer to the HDD context
+ * @channel: channel to reassociate
+ * @targetApBssid: Target AP/BSSID to reassociate
+ *
+ * Return: None
+ */
+#if defined(WLAN_FEATURE_ROAM_SCAN_OFFLOAD) && !defined(QCA_WIFI_ISOC)
+static void wlan_hdd_fastreassoc_handoff_request(hdd_context_t *pHddCtx,
+				uint8_t channel, tSirMacAddr targetApBssid)
+{
+	tCsrHandoffRequest handoffInfo;
+	handoffInfo.channel = channel;
+	handoffInfo.src = FASTREASSOC;
+	vos_mem_copy(handoffInfo.bssid, targetApBssid, sizeof(tSirMacAddr));
+	sme_HandoffRequest(pHddCtx->hHal, &handoffInfo);
+}
+#else
+static void wlan_hdd_fastreassoc_handoff_request(hdd_context_t *pHddCtx,
+				uint8_t channel, tSirMacAddr targetApBssid)
+{
+}
+#endif
+
+/**
+ * csr_fastroam_neighbor_ap_event() - Function to trigger scan/roam
+ * @pAdapter: Pointer to HDD adapter
+ * @channel: Channel to scan/roam
+ * @targetApBssid: BSSID to roam
+ *
+ * Return: None
+ */
+#ifdef QCA_WIFI_ISOC
+static void csr_fastroam_neighbor_ap_event(hdd_adapter_t *pAdapter,
+				uint8_t channel, tSirMacAddr targetApBssid)
+{
+	smeIssueFastRoamNeighborAPEvent(WLAN_HDD_GET_HAL_CTX(pAdapter),
+			&targetApBssid[0], eSME_ROAM_TRIGGER_SCAN, channel);
+}
+#else
+static void csr_fastroam_neighbor_ap_event(hdd_adapter_t *pAdapter,
+				uint8_t channel, tSirMacAddr targetApBssid)
+{
+}
+#endif
+
+/**
+ * wlan_hdd_handle_fastreassoc() - Handle fastreassoc command
+ * @pAdapter: pointer to hdd adapter
+ * @command: pointer to the command received
+ *
+ * Return: VOS_STATUS enum
+ */
+static VOS_STATUS wlan_hdd_handle_fastreassoc(hdd_adapter_t *pAdapter,
+						uint8_t *command)
+{
+	tANI_U8 *value = command;
+	tANI_U8 channel = 0;
+	tSirMacAddr targetApBssid;
+	hdd_station_ctx_t *pHddStaCtx = NULL;
+	hdd_context_t *pHddCtx = NULL;
+	int ret;
+	tCsrRoamModifyProfileFields mod_profile_fields;
+	uint32_t roam_id = 0;
+	pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+	pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+
+	/* if not associated, no need to proceed with reassoc */
+	if (eConnectionState_Associated != pHddStaCtx->conn_info.connState) {
+		hddLog(LOG1, FL("Not associated!"));
+		return eHAL_STATUS_FAILURE;
+	}
+
+	ret = hdd_parse_reassoc_command_v1_data(value, targetApBssid, &channel);
+	if (ret) {
+		hddLog(LOGE, FL("Failed to parse reassoc command data"));
+		return eHAL_STATUS_FAILURE;
+	}
+
+	/* if the target bssid is same as currently associated AP,
+	   then no need to proceed with reassoc */
+	if (vos_mem_compare(targetApBssid,
+				pHddStaCtx->conn_info.bssId,
+				sizeof(tSirMacAddr))) {
+		sme_GetModifyProfileFields(pHddCtx->hHal, pAdapter->sessionId,
+						&mod_profile_fields);
+		sme_RoamReassoc(pHddCtx->hHal, pAdapter->sessionId, NULL,
+				mod_profile_fields, &roam_id, 1);
+		hddLog(LOG1, FL("Reassoc BSSID is same as currently associated AP bssid"));
+		return eHAL_STATUS_SUCCESS;
+	}
+
+	/* Check channel number is a valid channel number */
+	if (VOS_STATUS_SUCCESS !=
+		wlan_hdd_validate_operation_channel(pAdapter, channel)) {
+		hddLog(LOGE, FL("Invalid Channel [%d]"), channel);
+		return eHAL_STATUS_FAILURE;
+	}
+
+	/* Proceed with reassoc */
+	wlan_hdd_fastreassoc_handoff_request(pHddCtx, channel, targetApBssid);
+
+	/* Proceed with scan/roam */
+	csr_fastroam_neighbor_ap_event(pAdapter, channel, targetApBssid);
+
+	return eHAL_STATUS_SUCCESS;
+}
+
+/**
+ * hdd_assign_reassoc_handoff - Set handoff source as REASSOC
+ * @handoffInfo: Pointer to the csr Handoff Request.
+ *
+ * Return: None
+ */
+#ifndef QCA_WIFI_ISOC
+static inline void hdd_assign_reassoc_handoff(tCsrHandoffRequest *handoffInfo)
+{
+	handoffInfo->src = REASSOC;
+}
+#else
+static inline void hdd_assign_reassoc_handoff(tCsrHandoffRequest *handoffInfo)
+{
+}
+#endif
 
 static int hdd_driver_command(hdd_adapter_t *pAdapter,
                               hdd_priv_data_t *ppriv_data)
@@ -5571,7 +5773,38 @@ static void __hdd_uninit (struct net_device *dev)
 
    do
    {
-      if (NULL == pAdapter)
+      pAdapter = pAdapterNode->pAdapter;
+      hddLog(VOS_TRACE_LEVEL_INFO, FL("Disabling queues"));
+      netif_tx_disable(pAdapter->dev);
+
+      if (pHddCtx->cfg_ini->sap_internal_restart &&
+              pAdapter->device_mode == WLAN_HDD_SOFTAP) {
+          hddLog(LOG1, FL("driver supports sap restart"));
+          vos_flush_work(&pHddCtx->sap_start_work);
+          hdd_sap_indicate_disconnect_for_sta(pAdapter);
+          hdd_cleanup_actionframe(pHddCtx, pAdapter);
+          hdd_softap_deinit_tx_rx(pAdapter);
+          hdd_sap_destroy_events(pAdapter);
+      } else {
+          netif_carrier_off(pAdapter->dev);
+      }
+
+      pAdapter->sessionCtx.station.hdd_ReassocScenario = VOS_FALSE;
+
+      hdd_deinit_tx_rx(pAdapter);
+
+      if(pAdapter->device_mode == WLAN_HDD_IBSS )
+         hdd_ibss_deinit_tx_rx(pAdapter);
+
+      status = hdd_sta_id_hash_detach(pAdapter);
+      if (status != VOS_STATUS_SUCCESS)
+          hddLog(VOS_TRACE_LEVEL_ERROR,
+                 FL("sta id hash detach failed for session id %d"),
+                 pAdapter->sessionId);
+
+      wlan_hdd_decr_active_session(pHddCtx, pAdapter->device_mode);
+
+      if (test_bit(WMM_INIT_DONE, &pAdapter->event_flags))
       {
          hddLog(VOS_TRACE_LEVEL_FATAL,
                 "%s: NULL pAdapter", __func__);
@@ -5606,10 +5839,97 @@ static void __hdd_uninit (struct net_device *dev)
       mutex_unlock(&pHddCtx->tdls_lock);
 #endif
 
-      /* after uninit our adapter structure will no longer be valid */
-      pAdapter->dev = NULL;
-      pAdapter->magic = 0;
-   } while (0);
+VOS_STATUS hdd_start_all_adapters( hdd_context_t *pHddCtx )
+{
+   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+   VOS_STATUS status;
+   hdd_adapter_t      *pAdapter;
+   eConnectionState  connState;
+
+   ENTER();
+
+   status = hdd_get_front_adapter ( pHddCtx, &pAdapterNode );
+
+   while ( NULL != pAdapterNode && VOS_STATUS_SUCCESS == status )
+   {
+      pAdapter = pAdapterNode->pAdapter;
+
+      hdd_wmm_init( pAdapter );
+
+      switch(pAdapter->device_mode)
+      {
+         case WLAN_HDD_INFRA_STATION:
+         case WLAN_HDD_P2P_CLIENT:
+         case WLAN_HDD_P2P_DEVICE:
+
+            connState = (WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))->conn_info.connState;
+
+            hdd_init_station_mode(pAdapter);
+            /* Open the gates for HDD to receive Wext commands */
+            pAdapter->isLinkUpSvcNeeded = FALSE; 
+            pHddCtx->scan_info.mScanPending = FALSE;
+            pHddCtx->scan_info.waitScanResult = FALSE;
+
+            //Trigger the initial scan
+            if (!pHddCtx->isLogpInProgress)
+                hdd_wlan_initial_scan(pAdapter);
+
+            //Indicate disconnect event to supplicant if associated previously
+            if (eConnectionState_Associated == connState ||
+                eConnectionState_IbssConnected == connState )
+            {
+               union iwreq_data wrqu;
+               memset(&wrqu, '\0', sizeof(wrqu));
+               wrqu.ap_addr.sa_family = ARPHRD_ETHER;
+               memset(wrqu.ap_addr.sa_data,'\0',ETH_ALEN);
+               wireless_send_event(pAdapter->dev, SIOCGIWAP, &wrqu, NULL);
+               pAdapter->sessionCtx.station.hdd_ReassocScenario = VOS_FALSE;
+
+               /* indicate disconnected event to nl80211 */
+               wlan_hdd_cfg80211_indicate_disconnect(pAdapter->dev, false,
+                                                     WLAN_REASON_UNSPECIFIED);
+            }
+            else if (eConnectionState_Connecting == connState)
+            {
+              /*
+               * Indicate connect failure to supplicant if we were in the
+               * process of connecting
+               */
+               hdd_connect_result(pAdapter->dev, NULL, NULL,
+                                       NULL, 0, NULL, 0,
+                                       WLAN_STATUS_ASSOC_DENIED_UNSPEC,
+                                       GFP_KERNEL);
+            }
+            break;
+
+         case WLAN_HDD_SOFTAP:
+            if (pHddCtx->cfg_ini->sap_internal_restart) {
+                hdd_init_ap_mode(pAdapter);
+                status = hdd_sta_id_hash_attach(pAdapter);
+                if (VOS_STATUS_SUCCESS != status)
+                {
+                    hddLog(VOS_TRACE_LEVEL_FATAL,
+                         FL("failed to attach hash for"));
+                }
+            }
+            break;
+
+         case WLAN_HDD_P2P_GO:
+            hddLog(VOS_TRACE_LEVEL_ERROR, "%s [SSR] send stop ap to supplicant",
+                                                       __func__);
+            cfg80211_ap_stopped(pAdapter->dev, GFP_KERNEL);
+            break;
+
+         case WLAN_HDD_MONITOR:
+            /* monitor interface start */
+            break;
+         default:
+            break;
+      }
+
+      status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
+      pAdapterNode = pNext;
+   }
 
    EXIT();
 }
@@ -10907,6 +11227,69 @@ void hdd_nullify_netdev_ops(hdd_context_t *pHddCtx)
       status = hdd_get_next_adapter ( pHddCtx, pAdapterNode, &pNext );
       pAdapterNode = pNext;
    }
+}
+
+/**
+ * wlan_hdd_start_sap() - This function starts bss of SAP.
+ * @ap_adapter: SAP adapter
+ *
+ * This function will process the starting of sap adapter.
+ *
+ * Return: void.
+ */
+void wlan_hdd_start_sap(hdd_adapter_t *ap_adapter)
+{
+	hdd_ap_ctx_t *hdd_ap_ctx;
+	hdd_hostapd_state_t *hostapd_state;
+	VOS_STATUS vos_status;
+	hdd_context_t *hdd_ctx;
+	tsap_Config_t *pConfig;
+
+	if (NULL == ap_adapter) {
+		VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+		FL("ap_adapter is NULL here"));
+		return;
+	}
+
+	hdd_ctx = WLAN_HDD_GET_CTX(ap_adapter);
+	hdd_ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(ap_adapter);
+	hostapd_state = WLAN_HDD_GET_HOSTAP_STATE_PTR(ap_adapter);
+	pConfig = &ap_adapter->sessionCtx.ap.sapConfig;
+
+	mutex_lock(&hdd_ctx->sap_lock);
+	if (test_bit(SOFTAP_BSS_STARTED, &ap_adapter->event_flags))
+		goto end;
+
+	if (0 != wlan_hdd_cfg80211_update_apies(ap_adapter)) {
+		hddLog(LOGE, FL("SAP Not able to set AP IEs"));
+		goto end;
+	}
+
+	vos_event_reset(&hostapd_state->vosEvent);
+	if (WLANSAP_StartBss(hdd_ctx->pvosContext, hdd_hostapd_SAPEventCB,
+			&hdd_ap_ctx->sapConfig, (v_PVOID_t)ap_adapter->dev)
+			!= VOS_STATUS_SUCCESS) {
+		goto end;
+	}
+
+	VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+		FL("Waiting for SAP to start"));
+	vos_status = vos_wait_single_event(&hostapd_state->vosEvent, 10000);
+	if (!VOS_IS_STATUS_SUCCESS(vos_status)) {
+		VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+			FL("SAP Start failed"));
+		goto end;
+	}
+	VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
+		FL("SAP Start Success"));
+	set_bit(SOFTAP_BSS_STARTED, &ap_adapter->event_flags);
+
+	wlan_hdd_incr_active_session(hdd_ctx, ap_adapter->device_mode);
+	hostapd_state->bCommit = TRUE;
+
+end:
+	mutex_unlock(&hdd_ctx->sap_lock);
+	return;
 }
 
 //Register the module init/exit functions
