@@ -334,5 +334,41 @@ VOS_STATUS vos_randomize_n_bytes(void *mac_addr, tANI_U32 n);
 
 v_BOOL_t vos_is_wlan_in_badState(VOS_MODULE_ID moduleId,
                                  v_VOID_t *moduleContext);
+v_VOID_t  vos_set_roam_delay_stats_enabled(v_U8_t value);
+v_U8_t    vos_get_roam_delay_stats_enabled(v_VOID_t);
+v_U32_t   vos_get_dxeReplenishRXTimerVal(void);
+v_BOOL_t  vos_get_dxeSSREnable(void);
 
+v_U8_t vos_is_fw_logging_enabled(void);
+v_U8_t vos_is_fw_ev_logging_enabled(void);
+
+v_U8_t vos_is_fw_logging_supported(void);
+void vos_set_multicast_logging(uint8_t value);
+v_U8_t vos_is_multicast_logging(void);
+void vos_set_ring_log_level(v_U32_t ring_id, v_U32_t log_level);
+v_U8_t vos_get_ring_log_level(v_U32_t ring_id);
+void get_rate_and_MCS(per_packet_stats *stats, uint32 rateindex);
+
+v_BOOL_t vos_isUnloadInProgress(void);
+v_BOOL_t vos_isLoadUnloadInProgress(void);
+
+bool vos_get_rx_wow_dump(void);
+void vos_set_rx_wow_dump(bool value);
+
+void vos_probe_threads(void);
+void vos_per_pkt_stats_to_user(void *perPktStat);
+void vos_updatePktStatsInfo(void * pktStat);
+bool vos_is_wlan_logging_enabled(void);
+
+v_BOOL_t vos_is_probe_rsp_offload_enabled(void);
+void vos_smd_dump_stats(void);
+void vos_log_wdi_event(uint16 msg, vos_wdi_trace_event_type event);
+void vos_dump_wdi_events(void);
+
+bool vos_check_arp_target_ip(void *pSkb, bool conversion);
+bool vos_check_arp_req_target_ip(void *pSkb, bool conversion);
+bool vos_check_arp_src_ip(void *pSkb, bool conversion);
+bool vos_check_arp_rsp_src_ip(void *pSkb, bool conversion);
+void vos_update_arp_fw_tx_delivered(void);
+void vos_update_arp_rx_drop_reorder(void);
 #endif // if !defined __VOS_NVITEM_H

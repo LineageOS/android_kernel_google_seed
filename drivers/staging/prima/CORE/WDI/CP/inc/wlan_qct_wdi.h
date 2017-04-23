@@ -7923,6 +7923,27 @@ typedef void  (*WDI_FWStatsGetRspCb)(WDI_Status status,void *fwStatsResp,
                                          void *pUserData);
 
 typedef void  (*WDI_EncryptMsgRspCb)(wpt_uint8 status, void *pEventData, void* pUserData);
+typedef void  (*WDI_FWLoggingInitRspCb)(
+                        WDI_FWLoggingInitRspParamType *wdiRsp, void *pUserData);
+typedef void  (*WDI_GetFrameLogRspCb)(
+                        WDI_GetFrameLogRspParamType *wdiRsp, void *pUserData);
+typedef void  (*WDI_FatalEventLogsRspCb)(
+                         WDI_FatalEventLogsRspParamType *wdiRsp, void *pUserData);
+
+typedef void  (*WDI_MonModeRspCb)(void *pEventData,void *pUserData);
+typedef void  (*WDI_RssiMonitorStartRspCb)(void *pEventData,void *pUserData);
+typedef void  (*WDI_RssiMonitorStopRspCb)(void *pEventData,void *pUserData);
+
+typedef void  (*WDI_FwrMemDumpRspCb)(WDI_FwrMemDumpRsp *wdiRsp, void *pUserData);
+
+typedef void  (*WDI_WifiConfigSetRspCb) (WDI_WifconfigSetRsp *wdiRsp, void *pUserData);
+
+typedef void (*WDI_AntennaDivSelRspCb)(WDI_Status status,
+              void *resp, void *pUserData);
+
+typedef void (*wdi_nud_set_arp_rsp_cb)(void *event_data,void *user_data);
+typedef void (*wdi_nud_get_arp_rsp_cb)(void *event_data,void *user_data);
+
 /*========================================================================
  *     Function Declarations and Documentation
  ==========================================================================*/
@@ -11302,4 +11323,115 @@ WDI_EncryptMsgReq(void* pwdiEncryptMsgParams,
  }
 #endif 
 
+/**
+ @brief WDI_WifiConfigSetReq
+    This API is called to send WifiConfig  request to FW
+
+ @param pwdiWifConfigSetReqParams : pointer to  wificonfig params
+        wdiLLStatsSetRspCb     : set wificonfig response callback
+        usrData : Client context
+ @see
+ @return SUCCESS or FAIL
+*/
+WDI_Status
+WDI_WifiConfigSetReq
+   (WDI_WifiConfigSetReqType* pwdiWifConfigSetReqParams,
+    WDI_WifiConfigSetRspCb wdiWifiConfigSetRspCb,
+    void*                 pUserData);
+
+/**
+ @brief WDI_GetCurrentAntennaIndex
+    This API is called to send getCurretAntennaIndex request to FW
+
+ @param pUserData: pointer to request params
+        wdiLLStatsSetRspCb     : set wificonfig response callback
+        reserved: request parameter
+ @see
+ @return SUCCESS or FAIL
+*/
+WDI_Status
+WDI_GetCurrentAntennaIndex
+(
+  void *pUserData,
+  WDI_AntennaDivSelRspCb wdiAntennaDivSelRspCb,
+  wpt_uint32 reserved
+);
+
+/**
+ @brief WDI_SetBcnMissPenaltyCount
+    This API is called to send modified roam parameters to FW
+
+ @param params: pointer to request params
+ @see
+ @return SUCCESS or FAIL
+*/
+WDI_Status
+WDI_SetBcnMissPenaltyCount
+(
+    WDI_ModifyRoamParamsReqType *params
+);
+
+/**
+ * WDI_SetAllowedActionFramesInd - This API is called to send Allowed
+ *                    Action frame details to FW
+ * @allowed_action_frames: Pointer to WDI_AllowedActionFramesInd structure
+ *                     which holds bitmask of allowed action frames
+ *
+ */
+WDI_Status
+WDI_SetAllowedActionFramesInd(
+   struct WDI_AllowedActionFramesInd *allowed_action_frames
+);
+
+void WDI_SetMgmtPktViaWQ5(wpt_boolean sendMgmtPktViaWQ5);
+
+/* ARP DEBUG STATS */
+typedef struct
+{
+   wpt_uint8 flag;
+   wpt_uint8 pkt_type;
+   wpt_uint32 ip_addr;
+} WDI_SetARPStatsParamsInfoType;
+
+typedef struct
+{
+  wpt_uint32 status;
+} WDI_SetARPStatsRspParamsType;
+
+typedef void (*WDI_SetARPStatsRspCb)(WDI_SetARPStatsRspParamsType* StatsRsp,
+                                     void* pUserData);
+
+WDI_Status
+WDI_SetARPStatsReq
+(
+  WDI_SetARPStatsParamsInfoType *pwdiSetStatsReqParams,
+  WDI_SetARPStatsRspCb          wdiSetARPStatsRspCb,
+  void*                      pUserData
+);
+
+/* ARP DEBUG STATS */
+typedef struct
+{
+   wpt_uint8 pkt_type;
+} WDI_GetARPStatsParamsInfoType;
+
+typedef struct
+{
+  wpt_uint32 status;
+  wpt_uint16 dad;
+  wpt_uint16 tx_fw_cnt;
+  wpt_uint16 rx_fw_cnt;
+  wpt_uint16 tx_ack_cnt;
+} WDI_GetARPStatsRspParamsType;
+
+typedef void (*WDI_GetARPStatsRspCb)(WDI_GetARPStatsRspParamsType* StatsRsp,
+                                     void* pUserData);
+
+WDI_Status
+WDI_GetARPStatsReq
+(
+  WDI_GetARPStatsParamsInfoType *pwdiGetStatsReqParams,
+  WDI_GetARPStatsRspCb          wdiGetARPStatsRspCb,
+  void*                      pUserData
+);
 #endif /* #ifndef WLAN_QCT_WDI_H */

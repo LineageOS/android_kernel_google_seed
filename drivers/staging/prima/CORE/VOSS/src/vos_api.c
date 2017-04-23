@@ -2257,3 +2257,954 @@ v_BOOL_t vos_is_wlan_in_badState(VOS_MODULE_ID moduleId,
     }
     return pVosWDCtx->isFatalError;
 }
+
+/**---------------------------------------------------------------------------
+
+  \brief vos_is_fw_logging_enabled() -
+
+  API to check if firmware is configured to send logs using DXE channel
+
+  \param  -  None
+
+  \return -  0: firmware logging is not enabled (it may or may not
+                be supported)
+             1: firmware logging is enabled
+
+  --------------------------------------------------------------------------*/
+v_U8_t vos_is_fw_logging_enabled(void)
+{
+   return hdd_is_fw_logging_enabled();
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief vos_is_fw_ev_logging_enabled() -
+
+  API to check if firmware is configured to send live logs using DXE channel
+
+  \param  -  None
+
+  \return -  0: firmware logging is not enabled (it may or may not
+                be supported)
+             1: firmware logging is enabled
+
+  --------------------------------------------------------------------------*/
+v_U8_t vos_is_fw_ev_logging_enabled(void)
+{
+   return hdd_is_fw_ev_logging_enabled();
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief vos_is_fw_logging_supported() -
+
+  API to check if firmware supports to send logs using DXE channel
+
+  \param  -  None
+
+  \return -  0: firmware logging is not supported
+             1: firmware logging is supported
+
+  --------------------------------------------------------------------------*/
+v_U8_t vos_is_fw_logging_supported(void)
+{
+   return IS_FRAME_LOGGING_SUPPORTED_BY_FW;
+}
+/**---------------------------------------------------------------------------
+
+  \brief vos_set_roam_delay_stats_enabled() -
+
+  API to set value of roamDelayStatsEnabled in vos context
+
+  \param  -  value to be updated
+
+  \return -  NONE
+
+  --------------------------------------------------------------------------*/
+
+v_VOID_t  vos_set_roam_delay_stats_enabled(v_U8_t value)
+{
+    gpVosContext->roamDelayStatsEnabled = value;
+}
+
+
+/**---------------------------------------------------------------------------
+
+  \brief vos_get_roam_delay_stats_enabled() -
+
+  API to get value of roamDelayStatsEnabled from vos context
+
+  \param  -  NONE
+
+  \return -  value of roamDelayStatsEnabled
+
+  --------------------------------------------------------------------------*/
+
+v_U8_t  vos_get_roam_delay_stats_enabled(v_VOID_t)
+{
+    return gpVosContext->roamDelayStatsEnabled;
+}
+
+v_U32_t vos_get_dxeReplenishRXTimerVal(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = NULL;
+
+    /* Get the Global VOSS Context */
+    pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    if(!pVosContext) {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: Global VOS context is Null", __func__);
+       return 0;
+    }
+
+    /* Get the HDD context */
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: HDD context is Null", __func__);
+       return 0;
+     }
+
+   return pHddCtx->cfg_ini->dxeReplenishRXTimerVal;
+}
+
+v_BOOL_t vos_get_dxeSSREnable(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = NULL;
+
+    /* Get the Global VOSS Context */
+    pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    if(!pVosContext) {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: Global VOS context is Null", __func__);
+       return FALSE;
+    }
+
+    /* Get the HDD context */
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       hddLog(VOS_TRACE_LEVEL_FATAL, "%s: HDD context is Null", __func__);
+       return FALSE;
+     }
+
+   return pHddCtx->cfg_ini->dxeSSREnable;
+}
+
+v_VOID_t vos_flush_work(struct work_struct *work)
+{
+#if defined (WLAN_OPEN_SOURCE)
+   cancel_work_sync(work);
+#else
+   wcnss_flush_work(work);
+#endif
+}
+
+v_VOID_t vos_flush_delayed_work(struct delayed_work *dwork)
+{
+#if defined (WLAN_OPEN_SOURCE)
+   cancel_delayed_work_sync(dwork);
+#else
+   wcnss_flush_delayed_work(dwork);
+#endif
+}
+
+v_VOID_t vos_init_work(struct work_struct *work , void *callbackptr)
+{
+#if defined (WLAN_OPEN_SOURCE)
+   INIT_WORK(work,callbackptr);
+#else
+   wcnss_init_work(work, callbackptr);
+#endif
+}
+
+v_VOID_t vos_init_delayed_work(struct delayed_work *dwork , void *callbackptr)
+{
+#if defined (WLAN_OPEN_SOURCE)
+   INIT_DELAYED_WORK(dwork,callbackptr);
+#else
+   wcnss_init_delayed_work(dwork, callbackptr);
+#endif
+}
+
+/**
+ * vos_set_multicast_logging() - Set mutlicast logging value
+ * @value: Value of multicast logging
+ *
+ * Set the multicast logging value which will indicate
+ * whether to multicast host and fw messages even
+ * without any registration by userspace entity
+ *
+ * Return: None
+ */
+void vos_set_multicast_logging(uint8_t value)
+{
+   vos_multicast_logging = value;
+}
+
+/**
+ * vos_is_multicast_logging() - Get multicast logging value
+ *
+ * Get the multicast logging value which will indicate
+ * whether to multicast host and fw messages even
+ * without any registration by userspace entity
+ *
+ * Return: 0 - Multicast logging disabled, 1 - Multicast logging enabled
+ */
+v_U8_t vos_is_multicast_logging(void)
+{
+   return vos_multicast_logging;
+}
+
+/**
+ * vos_isLoadUnloadInProgress()
+ *
+ * Return TRUE if load/unload is in progress.
+ *
+ */
+v_BOOL_t vos_isLoadUnloadInProgress(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if(!pVosContext)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return FALSE;
+    }
+
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return FALSE;
+    }
+
+    return ( 0 != pHddCtx->isLoadUnloadInProgress);
+}
+
+/**
+ * vos_isUnloadInProgress()
+ *
+ * Return TRUE if unload is in progress.
+ *
+ */
+v_BOOL_t vos_isUnloadInProgress(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if(!pVosContext)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return FALSE;
+    }
+
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return FALSE;
+    }
+
+    return (WLAN_HDD_UNLOAD_IN_PROGRESS == pHddCtx->isLoadUnloadInProgress);
+}
+
+/**
+ *vos_get_rx_wow_dump()
+ *
+ * Return true/flase to dump RX packet
+ *
+ */
+bool vos_get_rx_wow_dump(void)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if(!pVosContext)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return FALSE;
+    }
+
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return FALSE;
+    }
+
+    return pHddCtx->rx_wow_dump;
+}
+
+/**
+ *vos_set_rx_wow_dump() - Set RX wow pkt dump
+ *@value: Value of RX wow pkt dump
+ *
+ * Return none.
+ *
+ */
+void vos_set_rx_wow_dump(bool value)
+{
+    hdd_context_t *pHddCtx = NULL;
+    v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+
+    if(!pVosContext)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return;
+    }
+
+    pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+    if(!pHddCtx) {
+       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: HDD context is Null", __func__);
+       return;
+    }
+
+    pHddCtx->rx_wow_dump = value;
+}
+
+/**
+ * vos_probe_threads() - VOS API to post messages
+ * to all the threads to detect if they are active or not
+ *
+ * Return none.
+ *
+ */
+void vos_probe_threads(void)
+{
+    vos_msg_t msg;
+
+    msg.callback = vos_wd_reset_thread_stuck_count;
+    /* Post Message to MC Thread */
+    sysBuildMessageHeader(SYS_MSG_ID_MC_THR_PROBE, &msg);
+    if (VOS_STATUS_SUCCESS != vos_mq_post_message(VOS_MQ_ID_SYS, &msg)) {
+         VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+          FL("Unable to post SYS_MSG_ID_MC_THR_PROBE message to MC thread"));
+    }
+
+    /* Post Message to Tx Thread */
+    sysBuildMessageHeader(SYS_MSG_ID_TX_THR_PROBE, &msg);
+    if (VOS_STATUS_SUCCESS != vos_tx_mq_serialize(VOS_MQ_ID_SYS, &msg)) {
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+          FL("Unable to post SYS_MSG_ID_TX_THR_PROBE message to TX thread"));
+    }
+
+    /* Post Message to Rx Thread */
+    sysBuildMessageHeader(SYS_MSG_ID_RX_THR_PROBE, &msg);
+    if (VOS_STATUS_SUCCESS != vos_rx_mq_serialize(VOS_MQ_ID_SYS, &msg)) {
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+          FL("Unable to post SYS_MSG_ID_RX_THR_PROBE message to RX thread"));
+    }
+}
+
+/**
+ * vos_set_ring_log_level() - Convert HLOS values to driver log levels
+ * @ring_id: ring_id
+ * @log_levelvalue: Log level specificed
+ *
+ * This function sets the log level of a particular ring
+ *
+ * Return: None
+ */
+ void vos_set_ring_log_level(v_U32_t ring_id, v_U32_t log_level)
+{
+    VosContextType *vos_context;
+    v_U32_t log_val;
+
+    vos_context = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    if (!vos_context) {
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+              "%s: vos context is Invald", __func__);
+      return;
+    }
+
+    switch (log_level) {
+    case LOG_LEVEL_NO_COLLECTION:
+        log_val = WLAN_LOG_LEVEL_OFF;
+        break;
+    case LOG_LEVEL_NORMAL_COLLECT:
+        log_val = WLAN_LOG_LEVEL_NORMAL;
+        break;
+    case LOG_LEVEL_ISSUE_REPRO:
+        log_val = WLAN_LOG_LEVEL_REPRO;
+        break;
+    case LOG_LEVEL_ACTIVE:
+    default:
+        log_val = WLAN_LOG_LEVEL_ACTIVE;
+        break;
+    }
+
+    if (ring_id == RING_ID_WAKELOCK) {
+        vos_context->wakelock_log_level = log_val;
+        return;
+    } else if (ring_id == RING_ID_CONNECTIVITY) {
+        vos_context->connectivity_log_level = log_val;
+        return;
+    } else if (ring_id == RING_ID_PER_PACKET_STATS) {
+        vos_context->packet_stats_log_level = log_val;
+        if (WLAN_LOG_LEVEL_ACTIVE != log_val)
+            wlan_disable_and_flush_pkt_stats();
+
+        return;
+    }
+}
+/**
+ * vos_get_ring_log_level() - Get the a ring id's log level
+ * @ring_id: Ring id
+ *
+ * Fetch and return the log level corresponding to a ring id
+ *
+ * Return: Log level corresponding to the ring ID
+ */
+v_U8_t vos_get_ring_log_level(v_U32_t ring_id)
+{
+    VosContextType *vos_context;
+
+     vos_context = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+     if (!vos_context) {
+        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+            "%s: vos context is Invald", __func__);
+        return WLAN_LOG_LEVEL_OFF;
+    }
+
+    if (ring_id == RING_ID_WAKELOCK)
+        return vos_context->wakelock_log_level;
+    else if (ring_id == RING_ID_CONNECTIVITY)
+        return vos_context->connectivity_log_level;
+    else if (ring_id == RING_ID_PER_PACKET_STATS)
+        return vos_context->packet_stats_log_level;
+
+    return WLAN_LOG_LEVEL_OFF;
+}
+
+/* elements are rate, preamable, bw, short_gi */
+rateidx_to_rate_bw_preamble_sgi   rateidx_to_rate_bw_preamble_sgi_table[] =
+{
+/*11B CCK Long preamble (0-3)*/
+{ 10, PREAMBLE_CCK, S_BW20, 0},{ 20, PREAMBLE_CCK, S_BW20, 0},
+{ 55, PREAMBLE_CCK, S_BW20, 0},{ 110, PREAMBLE_CCK, S_BW20, 0},
+/*11B CCK Short preamble (4-7)*/
+{ 10, PREAMBLE_CCK, S_BW20, 0},{ 20, PREAMBLE_CCK, S_BW20, 0},
+{ 55, PREAMBLE_CCK, S_BW20, 0},{ 110, PREAMBLE_CCK, S_BW20, 0},
+/*11G/A (8-15)*/
+{ 60, PREAMBLE_OFDM, S_BW20, 0},{ 90, PREAMBLE_OFDM, S_BW20, 0},
+{ 120, PREAMBLE_OFDM, S_BW20, 0},{ 180, PREAMBLE_OFDM, S_BW20, 0},
+{ 240, PREAMBLE_OFDM, S_BW20, 0},{ 360, PREAMBLE_OFDM, S_BW20, 0},
+{ 480, PREAMBLE_OFDM, S_BW20, 0},{ 540, PREAMBLE_OFDM, S_BW20, 0},
+/*HT20 LGI MCS 0-7 (16-23)*/
+{ 65, PREAMBLE_HT, S_BW20, 0},{ 130, PREAMBLE_HT, S_BW20, 0},
+{ 195, PREAMBLE_HT, S_BW20, 0},{ 260, PREAMBLE_HT, S_BW20, 0},
+{ 390, PREAMBLE_HT, S_BW20, 0},{ 520, PREAMBLE_HT, S_BW20, 0},
+{ 585, PREAMBLE_HT, S_BW20, 0},{ 650, PREAMBLE_HT, S_BW20, 0},
+/*HT20 SGI MCS 0-7 (24-31)*/
+{ 72, PREAMBLE_HT, S_BW20, 1},{ 144, PREAMBLE_HT, S_BW20, 1},
+{ 217, PREAMBLE_HT, S_BW20, 1},{ 289, PREAMBLE_HT, S_BW20, 1},
+{ 433, PREAMBLE_HT, S_BW20, 1},{ 578, PREAMBLE_HT, S_BW20, 1},
+{ 650, PREAMBLE_HT, S_BW20, 1},{ 722, PREAMBLE_HT, S_BW20, 1},
+/*HT20 Greenfield MCS 0-7 rates (32-39)*/
+{ 65, PREAMBLE_HT, S_BW20, 0},{ 130, PREAMBLE_HT, S_BW20, 0},
+{ 195, PREAMBLE_HT, S_BW20, 0},{ 260, PREAMBLE_HT, S_BW20, 0},
+{ 390, PREAMBLE_HT, S_BW20, 0},{ 520, PREAMBLE_HT, S_BW20, 0},
+{ 585, PREAMBLE_HT, S_BW20, 0},{ 650, PREAMBLE_HT, S_BW20, 0},
+/*HT40 LGI MCS 0-7 (40-47)*/
+{ 135, PREAMBLE_HT, S_BW40, 0},{ 270, PREAMBLE_HT, S_BW40, 0},
+{ 405, PREAMBLE_HT, S_BW40, 0},{ 540, PREAMBLE_HT, S_BW40, 0},
+{ 810, PREAMBLE_HT, S_BW40, 0},{ 1080, PREAMBLE_HT, S_BW40, 0},
+{ 1215, PREAMBLE_HT, S_BW40, 0},{ 1350, PREAMBLE_HT, S_BW40, 0},
+/*HT40 SGI MCS 0-7 (48-55)*/
+{ 150, PREAMBLE_HT, S_BW40, 1},{ 300, PREAMBLE_HT, S_BW40, 1},
+{ 450, PREAMBLE_HT, S_BW40, 1},{ 600, PREAMBLE_HT, S_BW40, 1},
+{ 900, PREAMBLE_HT, S_BW40, 1},{ 1200, PREAMBLE_HT, S_BW40, 1},
+{ 1350, PREAMBLE_HT, S_BW40, 1},{ 1500, PREAMBLE_HT, S_BW40, 1},
+/*HT40 Greenfield MCS 0-7 rates (56-63) 64-65 are dummy*/
+{ 135, PREAMBLE_HT, S_BW40, 0},{ 270, PREAMBLE_HT, S_BW40, 0},
+{ 405, PREAMBLE_HT, S_BW40, 0},{ 540, PREAMBLE_HT, S_BW40, 0},
+{ 810, PREAMBLE_HT, S_BW40, 0},{ 1080, PREAMBLE_HT, S_BW40, 0},
+{ 1215, PREAMBLE_HT, S_BW40, 0},{ 1350, PREAMBLE_HT, S_BW40, 0},
+/*64-65 are dummy*/
+{ 1350, PREAMBLE_HT, S_BW40, 0},{ 1350, PREAMBLE_HT, S_BW40, 0},
+/*VHT20 LGI  MCS 0-9 rates (66-75)*/
+{ 65, PREAMBLE_VHT, S_BW20, 0},{ 130, PREAMBLE_VHT, S_BW20, 0},
+{ 195, PREAMBLE_VHT, S_BW20, 0},{ 260, PREAMBLE_VHT, S_BW20, 0},
+{ 390, PREAMBLE_VHT, S_BW20, 0},{ 520, PREAMBLE_VHT, S_BW20, 0},
+{ 585, PREAMBLE_VHT, S_BW20, 0},{ 650, PREAMBLE_VHT, S_BW20, 0},
+{ 780, PREAMBLE_VHT, S_BW20, 0},{ 865, PREAMBLE_VHT, S_BW20, 0},
+/*76-77 are dummy*/
+{ 865, PREAMBLE_VHT, S_BW20, 0},{ 865, PREAMBLE_VHT, S_BW20, 0},
+/*VHT20 SGI MCS 0-9 rates (78-87)*/
+{ 72, PREAMBLE_VHT, S_BW20, 1},{ 144, PREAMBLE_VHT, S_BW20, 1},
+{ 217, PREAMBLE_VHT, S_BW20, 1},{ 289, PREAMBLE_VHT, S_BW20, 1},
+{ 433, PREAMBLE_VHT, S_BW20, 1},{ 578, PREAMBLE_VHT, S_BW20, 1},
+{ 650, PREAMBLE_VHT, S_BW20, 1},{ 722, PREAMBLE_VHT, S_BW20, 1},
+{ 867, PREAMBLE_VHT, S_BW20, 1},{ 961, PREAMBLE_VHT, S_BW20, 1},
+/*88-89 are dummy*/
+{ 961, PREAMBLE_VHT, S_BW20, 1},{ 961, PREAMBLE_VHT, S_BW20, 1},
+/*VHT40 LGI MCS 0-9 rates (90-101) 98,101 is Dummy*/
+{ 135, PREAMBLE_VHT, S_BW40, 0},{ 270, PREAMBLE_VHT, S_BW40, 0},
+{ 405, PREAMBLE_VHT, S_BW40, 0},{ 540, PREAMBLE_VHT, S_BW40, 0},
+{ 810, PREAMBLE_VHT, S_BW40, 0},{ 1080, PREAMBLE_VHT, S_BW40, 0},
+{ 1215, PREAMBLE_VHT, S_BW40, 0},{ 1350, PREAMBLE_VHT, S_BW40, 0},
+{ 1350, PREAMBLE_VHT, S_BW40, 0},{ 1620, PREAMBLE_VHT, S_BW40, 0},
+{ 1800, PREAMBLE_VHT, S_BW40, 0},{ 1800, PREAMBLE_VHT, S_BW40, 0},
+/*VHT40 SGI MCS 0-9 rates (102-112) 110, 113 is Dummy*/
+{ 150, PREAMBLE_VHT, S_BW40, 1},{ 300, PREAMBLE_VHT, S_BW40, 1},
+{ 450, PREAMBLE_VHT, S_BW40, 1},{ 600, PREAMBLE_VHT, S_BW40, 1},
+{ 900, PREAMBLE_VHT, S_BW40, 1},{ 1200, PREAMBLE_VHT, S_BW40, 1},
+{ 1350, PREAMBLE_VHT, S_BW40, 1},{ 1500, PREAMBLE_VHT, S_BW40, 1},
+{ 1500, PREAMBLE_VHT, S_BW40, 1},{ 1800, PREAMBLE_VHT, S_BW40, 1},
+{ 2000, PREAMBLE_VHT, S_BW40, 1},{ 2000, PREAMBLE_VHT, S_BW40, 1},
+/*VHT80 LGI MCS 0-9 rates (114-125) 122, 125 is Dummy*/
+{ 293, PREAMBLE_VHT, S_BW80, 0},{ 585, PREAMBLE_VHT, S_BW80, 0},
+{ 878, PREAMBLE_VHT, S_BW80, 0},{ 1170, PREAMBLE_VHT, S_BW80, 0},
+{ 1755, PREAMBLE_VHT, S_BW80, 0},{ 2340, PREAMBLE_VHT, S_BW80, 0},
+{ 2633, PREAMBLE_VHT, S_BW80, 0},{ 2925, PREAMBLE_VHT, S_BW80, 0},
+{ 2925, PREAMBLE_VHT, S_BW80, 0},{ 3510, PREAMBLE_VHT, S_BW80, 0},
+{ 3900, PREAMBLE_VHT, S_BW80, 0},{ 3900, PREAMBLE_VHT, S_BW80, 0},
+/*VHT80 SGI MCS 0-9 rates (126-136) 134 is Dummy*/
+{ 325, PREAMBLE_VHT, S_BW80, 1},{ 650, PREAMBLE_VHT, S_BW80, 1},
+{ 975, PREAMBLE_VHT, S_BW80, 1},{ 1300, PREAMBLE_VHT, S_BW80, 1},
+{ 1950, PREAMBLE_VHT, S_BW80, 1},{ 2600, PREAMBLE_VHT, S_BW80, 1},
+{ 2925, PREAMBLE_VHT, S_BW80, 1},{ 3250, PREAMBLE_VHT, S_BW80, 1},
+{ 3250, PREAMBLE_VHT, S_BW80, 1},{ 3900, PREAMBLE_VHT, S_BW80, 1},
+{ 4333, PREAMBLE_VHT, S_BW80, 1},
+};
+
+void get_rate_and_MCS(per_packet_stats *stats, uint32 rateindex)
+{
+    rateidx_to_rate_bw_preamble_sgi *ratetbl;
+
+    if (STATS_MAX_RATE_INDEX < rateindex)
+        rateindex = STATS_MAX_RATE_INDEX;
+    ratetbl= &rateidx_to_rate_bw_preamble_sgi_table[rateindex];
+    stats->last_transmit_rate = ratetbl->rate/5;
+    stats->MCS.nss = 0;
+    if (0 <= rateindex && rateindex <= 7)
+        stats->MCS.rate = 7 - rateindex;
+    else if (8 <= rateindex && rateindex <= 15)
+    {
+        switch(rateindex)
+        {
+            case 8:stats->MCS.rate = 3; break;
+            case 9:stats->MCS.rate = 7; break;
+            case 10:stats->MCS.rate = 2; break;
+            case 11:stats->MCS.rate = 6; break;
+            case 12:stats->MCS.rate = 1; break;
+            case 13:stats->MCS.rate = 5; break;
+            case 14:stats->MCS.rate = 0; break;
+            case 15:stats->MCS.rate = 4; break;
+        }
+    }
+    else if(16 <= rateindex && rateindex <= 23)
+        stats->MCS.rate = rateindex - 16;
+    else if(24 <= rateindex  && rateindex <= 31)
+        stats->MCS.rate =  rateindex - 24;
+    else if(32 <= rateindex  && rateindex <= 39)
+        stats->MCS.rate = rateindex - 32;
+    else if(40 <= rateindex && rateindex <= 47)
+        stats->MCS.rate = rateindex - 40;
+    else if(48 <= rateindex && rateindex <= 55)
+        stats->MCS.rate = rateindex - 48;
+    else if(56 <= rateindex && rateindex <= 63)
+        stats->MCS.rate = rateindex - 56;
+    else if(66 <= rateindex && rateindex <= 75)
+        stats->MCS.rate = rateindex - 66;
+    else if(78 <= rateindex && rateindex <= 87)
+        stats->MCS.rate = rateindex - 78;
+    else if(90 <= rateindex && rateindex <= 100)
+        stats->MCS.rate = rateindex - 90;
+    else if(78 <= rateindex && rateindex <= 87)
+        stats->MCS.rate = rateindex - 78;
+    else if(90 <= rateindex && rateindex <= 97)
+        stats->MCS.rate = rateindex - 90;
+    else if(99 <= rateindex && rateindex <= 100)
+        stats->MCS.rate = rateindex - 91;
+    else if(102 <= rateindex && rateindex <= 109)
+        stats->MCS.rate = rateindex - 102;
+    else if(111 <= rateindex && rateindex <= 112)
+        stats->MCS.rate = rateindex - 103;
+    else if(114 <= rateindex && rateindex <= 121)
+        stats->MCS.rate = rateindex - 114;
+    else if(123 <= rateindex && rateindex <= 124)
+        stats->MCS.rate = rateindex - 115;
+    else if(126 <= rateindex && rateindex <= 133)
+        stats->MCS.rate = rateindex - 126;
+    else if(135 <= rateindex && rateindex <= 136)
+        stats->MCS.rate = rateindex - 127;
+    else /*Invalid rate index mark it 0*/
+        stats->MCS.rate = 0;
+    stats->MCS.preamble = ratetbl->preamble;
+    stats->MCS.bw = ratetbl->bw;
+    stats->MCS.short_gi = ratetbl->short_gi;
+}
+
+bool vos_isPktStatsEnabled(void)
+{
+    bool value;
+    value = wlan_isPktStatsEnabled();
+    return (value);
+}
+
+bool vos_is_wlan_logging_enabled(void)
+{
+    v_CONTEXT_t vos_ctx = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+    hdd_context_t *hdd_ctx;
+
+    if(!vos_ctx)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+       return false;
+    }
+
+    hdd_ctx = vos_get_context(VOS_MODULE_ID_HDD, vos_ctx);
+
+    if(!hdd_ctx)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: HDD context is Null", __func__);
+       return false;
+    }
+
+    if (!hdd_ctx->cfg_ini->wlanLoggingEnable)
+    {
+       hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Logging framework not enabled!", __func__);
+       return false;
+    }
+
+    return true;
+}
+
+/**---------------------------------------------------------------------------
+
+  \brief vos_is_probe_rsp_offload_enabled -
+
+  API to check if probe response offload feature is enabled from ini
+
+  \param  -  None
+
+  \return -  0: probe response offload is disabled
+             1: probe response offload is enabled
+
+  --------------------------------------------------------------------------*/
+v_BOOL_t vos_is_probe_rsp_offload_enabled(void)
+{
+	hdd_context_t *pHddCtx = NULL;
+	v_CONTEXT_t pVosContext = NULL;
+
+	/* Get the Global VOSS Context */
+	pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+	if (!pVosContext) {
+		hddLog(VOS_TRACE_LEVEL_FATAL,
+		       "%s: Global VOS context is Null", __func__);
+		return FALSE;
+	}
+
+	/* Get the HDD context */
+	pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD,
+						   pVosContext);
+	if (!pHddCtx) {
+		hddLog(VOS_TRACE_LEVEL_FATAL,
+		       "%s: HDD context is Null", __func__);
+		return FALSE;
+	}
+
+	return pHddCtx->cfg_ini->sap_probe_resp_offload;
+}
+
+void vos_smd_dump_stats(void)
+{
+  WCTS_Dump_Smd_status();
+}
+
+void vos_log_wdi_event(uint16 msg, vos_wdi_trace_event_type event)
+{
+
+   if (gvos_wdi_msg_trace_index >= VOS_TRACE_INDEX_MAX)
+   {
+          gvos_wdi_msg_trace_index = 0;
+   }
+
+   gvos_wdi_msg_trace[gvos_wdi_msg_trace_index].event = event;
+   gvos_wdi_msg_trace[gvos_wdi_msg_trace_index].time =
+                                 vos_get_monotonic_boottime();
+   gvos_wdi_msg_trace[gvos_wdi_msg_trace_index].message =  msg;
+   gvos_wdi_msg_trace_index++;
+
+   return;
+}
+
+void vos_dump_wdi_events(void)
+{
+   int i;
+
+   for(i = 0; i < VOS_TRACE_INDEX_MAX; i++) {
+            VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
+            "%s:event:%d time:%lld msg:%d ",__func__,
+            gvos_wdi_msg_trace[i].event,
+            gvos_wdi_msg_trace[i].time,
+            gvos_wdi_msg_trace[i].message);
+  }
+}
+/**
+ * vos_check_arp_target_ip() - check if the Target IP is gateway IP
+ * @pPacket: pointer to vos packet
+ * @conversion: 802.3 to 802.11 frame conversion
+ *
+ * Return: true if the IP is of gateway or false otherwise
+ */
+bool vos_check_arp_target_ip(void *pSkb, bool conversion)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   hdd_context_t *pHddCtx = NULL;
+   struct sk_buff *skb;
+   uint8_t offset;
+
+   if(!pVosContext)
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return false;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+   if(!pHddCtx) {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: HDD context is Null", __func__);
+      return false;
+   }
+
+   if (unlikely(NULL == pSkb))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: NULL pointer", __func__);
+      return false;
+   }
+
+   skb = (struct sk_buff *)pSkb;
+
+   if (conversion)
+      offset = VOS_ARP_TARGET_IP_OFFSET + VOS_80211_8023_HEADER_OFFSET;
+   else
+      offset = VOS_ARP_TARGET_IP_OFFSET;
+
+   if (pHddCtx->track_arp_ip ==
+                      (v_U32_t)(*(v_U32_t *)(skb->data + offset)))
+      return true;
+
+   return false;
+}
+
+/**
+ * vos_check_arp_req_target_ip() - check if the ARP is request and
+                                   target IP is gateway
+ * @pPacket: pointer to vos packet
+ * @conversion: 802.3 to 802.11 frame conversion
+ *
+ * Return: true if the IP is of gateway or false otherwise
+ */
+bool vos_check_arp_req_target_ip(void *pSkb, bool conversion)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   struct sk_buff *skb;
+   uint8_t offset;
+
+   if(!pVosContext)
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return false;
+   }
+
+   if (unlikely(NULL == pSkb))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: NULL pointer", __func__);
+      return false;
+   }
+
+   skb = (struct sk_buff *)pSkb;
+
+   if (conversion)
+      offset = VOS_PKT_ARP_OPCODE_OFFSET + VOS_80211_8023_HEADER_OFFSET;
+   else
+      offset = VOS_PKT_ARP_OPCODE_OFFSET;
+
+   if (htons(VOS_PKT_ARPOP_REQUEST) ==
+			       (uint16_t)(*(uint16_t *)(skb->data + offset)))
+   {
+      if (vos_check_arp_target_ip(skb, conversion))
+         return true;
+   }
+
+   return false;
+}
+
+/**
+ * vos_check_arp_src_ip() - check if the ARP response src IP is gateway IP
+ * @pPacket: pointer to vos packet
+ * @conversion: 802.3 to 802.11 frame conversion
+ *
+ * Return: true if the IP is of gateway or false otherwise
+ */
+bool vos_check_arp_src_ip(void *pSkb, bool conversion)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   hdd_context_t *pHddCtx = NULL;
+   struct sk_buff *skb;
+   uint8_t offset;
+
+   if(!pVosContext)
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return false;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+   if(!pHddCtx) {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: HDD context is Null", __func__);
+      return false;
+   }
+
+   if (unlikely(NULL == pSkb))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: NULL pointer", __func__);
+      return false;
+   }
+
+   skb = (struct sk_buff *)pSkb;
+
+   if (conversion)
+      offset = VOS_ARP_SRC_IP_OFFSET + VOS_80211_8023_HEADER_OFFSET;
+   else
+      offset = VOS_ARP_SRC_IP_OFFSET;
+
+   if (pHddCtx->track_arp_ip ==
+                      (v_U32_t)(*(v_U32_t *)(skb->data + offset)))
+      return true;
+
+   return false;
+}
+
+/**
+ * vos_check_arp_rsp_src_ip() - check if the ARP is request and
+                                   target IP is gateway
+ * @pPacket: pointer to vos packet
+ * @conversion: 802.3 to 802.11 frame conversion
+ *
+ * Return: true if the IP is of gateway or false otherwise
+ */
+bool vos_check_arp_rsp_src_ip(void *pSkb, bool conversion)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   struct sk_buff *skb;
+   uint8_t offset;
+
+   if(!pVosContext)
+   {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return false;
+   }
+
+   if (unlikely(NULL == pSkb))
+   {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+                "%s: NULL pointer", __func__);
+      return false;
+   }
+
+   skb = (struct sk_buff *)pSkb;
+
+   if (conversion)
+      offset = VOS_PKT_ARP_OPCODE_OFFSET + VOS_80211_8023_HEADER_OFFSET;
+   else
+      offset = VOS_PKT_ARP_OPCODE_OFFSET;
+
+   if (htons(VOS_PKT_ARPOP_REPLY) ==
+			       (uint16_t)(*(uint16_t *)(skb->data + offset)))
+   {
+      if (vos_check_arp_src_ip(skb, conversion))
+         return true;
+   }
+
+   return false;
+}
+
+/**
+ * vos_update_arp_fw_tx_delivered() - update the ARP stats host to FW deliver
+ *                                    count
+ *
+ * Return: None
+ */
+void vos_update_arp_fw_tx_delivered(void)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   hdd_context_t *pHddCtx = NULL;
+   hdd_adapter_t * pAdapter;
+   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+   uint8_t status;
+
+   if(!pVosContext) {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+   if(!pHddCtx) {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: HDD context is Null", __func__);
+      return;
+   }
+
+   status = hdd_get_front_adapter(pHddCtx, &pAdapterNode);
+
+   while (NULL != pAdapterNode && 0 == status)
+   {
+      pAdapter = pAdapterNode->pAdapter;
+      if (pAdapter->device_mode == WLAN_HDD_INFRA_STATION)
+         break;
+
+      status = hdd_get_next_adapter (pHddCtx, pAdapterNode, &pNext);
+      pAdapterNode = pNext;
+   }
+
+   pAdapter->hdd_stats.hddArpStats.tx_host_fw_sent++;
+}
+
+/**
+ * vos_update_arp_rx_drop_reorder() - update the RX ARP stats drop due
+ *                                    reorder logic at host
+ *
+ * Return: None
+ */
+void vos_update_arp_rx_drop_reorder(void)
+{
+   v_CONTEXT_t pVosContext = vos_get_global_context(VOS_MODULE_ID_SYS, NULL);
+   hdd_context_t *pHddCtx = NULL;
+   hdd_adapter_t * pAdapter;
+   hdd_adapter_list_node_t *pAdapterNode = NULL, *pNext = NULL;
+   uint8_t status;
+
+   if(!pVosContext) {
+      hddLog(VOS_TRACE_LEVEL_FATAL,"%s: Global VOS context is Null", __func__);
+      return;
+   }
+
+   pHddCtx = (hdd_context_t *)vos_get_context(VOS_MODULE_ID_HDD, pVosContext );
+   if(!pHddCtx) {
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_FATAL,
+               "%s: HDD context is Null", __func__);
+      return;
+   }
+
+   status = hdd_get_front_adapter(pHddCtx, &pAdapterNode);
+
+   while (NULL != pAdapterNode && 0 == status)
+   {
+      pAdapter = pAdapterNode->pAdapter;
+      if (pAdapter->device_mode == WLAN_HDD_INFRA_STATION)
+         break;
+
+      status = hdd_get_next_adapter (pHddCtx, pAdapterNode, &pNext);
+      pAdapterNode = pNext;
+   }
+
+   pAdapter->hdd_stats.hddArpStats.rx_host_drop_reorder++;
+}

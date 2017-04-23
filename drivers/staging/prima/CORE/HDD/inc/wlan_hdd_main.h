@@ -99,6 +99,7 @@
 #define SOFTAP_BSS_STARTED     (4)
 #define DEVICE_IFACE_OPENED    (5)
 #define TDLS_INIT_DONE         (6)
+#define SOFTAP_INIT_DONE       (7)
 
 /** Maximum time(ms)to wait for disconnect to complete **/
 #define WLAN_WAIT_TIME_DISCONNECT  2000
@@ -352,6 +353,35 @@ typedef struct hdd_pmf_stats_s
 } hdd_pmf_stats_t;
 #endif
 
+typedef enum
+{
+   HDD_TX_FRAME_IN_NOT_ASSOCIATED_STATE = 0,
+   HDD_VOS_PACKET_RETURNED_BY_VOSS_IS_NULL,
+   HDD_WLANTL_STAPKTPENDING_RETURNED_ERROR_CODE,
+   HDD_INSERT_TX_QUEUE_FAILED,
+   HDD_FAILED_TO_SIGNAL_TL,
+   HDD_ERROR_ATTACHING_SKB,
+   HDD_FAILURE_EXTRACTING_SKB_FROM_VOS_PKT,
+   HDD_FAILURE_WALKING_PACKET_CHAIN,
+   HDD_STA_RX_ARP_PACKET_REFUSED_IN_NET_STACK
+} HDD_PACKET_DROP_CAUSE;
+
+typedef struct hdd_arp_stats_s
+{
+   uint16   tx_arp_req_count;
+   uint16   rx_arp_rsp_count;
+   uint16   txDropped;
+   uint16   rxDropped;
+   uint16   rxDelivered;
+   uint16   rxRefused;
+   uint16   tx_host_fw_sent;
+   uint16   rx_host_drop_reorder;
+   uint16_t tx_fw_cnt;
+   uint16_t rx_fw_cnt;
+   uint16_t tx_ack_cnt;
+   HDD_PACKET_DROP_CAUSE reason;
+} hdd_arp_stats_t;
+
 typedef struct hdd_stats_s
 {
    tCsrSummaryStatsInfo       summary_stat;
@@ -362,6 +392,7 @@ typedef struct hdd_stats_s
    tCsrPerStaStatsInfo        perStaStats;
    hdd_tx_rx_stats_t          hddTxRxStats;
    hdd_chip_reset_stats_t     hddChipResetStats;
+   hdd_arp_stats_t            hddArpStats;
 #ifdef WLAN_FEATURE_11W
    hdd_pmf_stats_t            hddPmfStats;
 #endif
@@ -1108,6 +1139,15 @@ struct hdd_adapter_s
    struct delayed_work roc_work;
    /* Time stamp for start RoC request */
    v_TIME_t startRocTs;
+
+   /* Wireless statistics */
+   struct iw_statistics iwStats;
+
+   /* Currently used antenna Index*/
+   int antennaIndex;
+   bool nud_set_arp_stats;
+   bool con_status;
+   bool dad;
 };
 
 #define WLAN_HDD_GET_STATION_CTX_PTR(pAdapter) (&(pAdapter)->sessionCtx.station)
@@ -1158,6 +1198,112 @@ typedef struct
 {
    v_MACADDR_t randomMacAddr;
 }macAddrSpoof_t;
+
+#define WLAN_WAIT_TIME_LL_STATS 800
+
+#define WLAN_WAIT_TIME_NUD_STATS 800
+#define WLAN_NUD_STATS_LEN 800
+#define WLAN_NUD_STATS_ARP_PKT_TYPE 1
+
+/* FW memory dump feature
+@TODO : Move this code to a separate file later */
+#define PROCFS_MEMDUMP_DIR  "debug"
+#define PROCFS_MEMDUMP_NAME "fwdump"
+#define FW_MEM_DUMP_REQ_ID 1
+#define FW_MEM_DUMP_TIMEOUT_MS 800
+#define FW_MEM_DUMP_MAGIC 0x3C3A2D44
+
+/**
+ * struct hdd_fw_mem_dump_req_ctx - hdd fw mem dump req context
+ *
+ * @magic : magic for validating cfg80211 requests
+ * @status: status for cfg80211 requests
+ * @pHDDCtx: ptr to HDD context
+ * @req_completion: completion variable for fw mem dump
+ */
+struct hdd_fw_mem_dump_req_ctx {
+   uint32_t magic;
+   bool status;
+   struct completion req_completion;
+};
+
+/**
+ * callback type to check fw mem dump request.Called from SVC
+ * context and update status in HDD.
+ */
+typedef void (*hdd_fw_mem_dump_req_cb)(struct hdd_fw_mem_dump_req_ctx *);
+
+int memdump_init(void);
+int memdump_deinit(void);
+void wlan_hdd_fw_mem_dump_cb(void *,tAniFwrDumpRsp *);
+int wlan_hdd_fw_mem_dump_req(hdd_context_t * pHddCtx);
+void wlan_hdd_fw_mem_dump_req_cb(struct hdd_fw_mem_dump_req_ctx*);
+#ifdef WLAN_FEATURE_LINK_LAYER_STATS
+/**
+ * struct hdd_ll_stats_context - hdd link layer stats context
+ *
+ * @request_id: userspace-assigned link layer stats request id
+ * @request_bitmap: userspace-assigned link layer stats request bitmap
+ * @response_event: LL stats request wait event
+ */
+struct hdd_ll_stats_context {
+    uint32_t request_id;
+    uint32_t request_bitmap;
+    struct completion response_event;
+};
+#endif /* End of WLAN_FEATURE_LINK_LAYER_STATS */
+
+/**
+ * struct hdd_nud_stats_context - hdd NUD stats context
+ *
+ * @response_event: NUD stats request wait event
+ */
+struct hdd_nud_stats_context {
+    struct completion response_event;
+};
+#ifdef WLAN_FEATURE_EXTSCAN
+/**
+ * struct hdd_ext_scan_context - hdd ext scan context
+ *
+ * @request_id: userspace-assigned ID associated with the request
+ * @response_status: Status returned by FW in response to a request
+ * @ignore_cached_results: Flag to ignore cached results or not
+ * @capability_response: Ext scan capability response data from target
+ */
+
+struct hdd_ext_scan_context {
+    v_U32_t request_id;
+    int response_status;
+    bool ignore_cached_results;
+    struct completion response_event;
+    tSirEXTScanCapabilitiesEvent capability_response;
+};
+#endif /* End of WLAN_FEATURE_EXTSCAN */
+
+#ifdef WLAN_FEATURE_OFFLOAD_PACKETS
+/**
+ * struct hdd_offloaded_packets - request id to pattern id mapping
+ * @request_id: request id
+ * @pattern_id: pattern id
+ *
+ */
+struct hdd_offloaded_packets
+{
+    uint32_t request_id;
+    uint8_t  pattern_id;
+};
+
+/**
+ * struct hdd_offloaded_packets_ctx - offloaded packets context
+ * @op_table: request id to pattern id table
+ * @op_lock: mutex lock
+ */
+struct hdd_offloaded_packets_ctx
+{
+    struct hdd_offloaded_packets op_table[MAXNUM_PERIODIC_TX_PTRNS];
+    struct mutex op_lock;
+};
+#endif
 
 /** Adapter stucture definition */
 
@@ -1383,6 +1529,50 @@ struct hdd_context_s
      * IP
      */
     struct notifier_block ipv4_notifier;
+    //Lock to avoid race condition during wmm operations
+    struct mutex   wmmLock;
+    v_BOOL_t mgmt_frame_logging;
+    v_BOOL_t isSetBandByNL;
+    v_U8_t fw_Version[SIR_VERSION_STRING_LEN];
+#ifdef WLAN_FEATURE_LINK_LAYER_STATS
+    struct hdd_ll_stats_context ll_stats_context;
+#endif /* End of WLAN_FEATURE_LINK_LAYER_STATS */
+    struct hdd_nud_stats_context nud_stats_context;
+
+#ifdef WLAN_FEATURE_EXTSCAN
+    struct hdd_ext_scan_context ext_scan_context;
+#endif /* WLAN_FEATURE_EXTSCAN */
+
+    /* Time since boot up to WiFi turn ON (in micro seconds) */
+    v_U64_t wifi_turn_on_time_since_boot;
+    unsigned long  last_suspend_success;
+    v_U32_t  continuous_suspend_fail_cnt;
+
+#ifdef WLAN_FEATURE_OFFLOAD_PACKETS
+    struct hdd_offloaded_packets_ctx op_ctx;
+#endif
+
+   /* work queue to defer mac spoofing */
+   struct delayed_work spoof_mac_addr_work;
+
+    vos_timer_t    delack_timer;
+    struct mutex   cur_rx_level_lock;
+    v_U32_t        cur_rx_level;
+    v_U64_t        prev_rx;
+    v_ULONG_t      mode;
+
+    /* bit map to set/reset TDLS by different sources */
+    unsigned long tdls_source_bitmap;
+
+    /* tdls source timer to enable/disable TDLS on p2p listen */
+    vos_timer_t tdls_source_timer;
+
+    v_U64_t extscan_start_time_since_boot;
+    v_U8_t last_scan_reject_session_id;
+    scan_reject_states last_scan_reject_reason;
+    v_TIME_t last_scan_reject_timestamp;
+
+    uint32_t track_arp_ip;
 };
 
 
@@ -1547,6 +1737,100 @@ VOS_STATUS wlan_hdd_init_channels_for_cc(hdd_context_t *pHddCtx,  driver_load_ty
 #endif
 
 VOS_STATUS wlan_hdd_cancel_remain_on_channel(hdd_context_t *pHddCtx);
+hdd_remain_on_chan_ctx_t *hdd_get_remain_on_channel_ctx(hdd_context_t *pHddCtx);
+
+VOS_STATUS wlan_hdd_handle_dfs_chan_scan(hdd_context_t *pHddCtx,
+                                   tANI_U8 dfsScanMode);
+
+v_U8_t hdd_is_fw_logging_enabled(void);
+v_U8_t hdd_is_fw_ev_logging_enabled(void);
+
+#define HDD_STA_ID_HASH_MULTIPLIER 2
+
+struct hdd_align_mac_addr_t {
+    uint16 bytes_ab;
+    uint16 bytes_cd;
+    uint16 bytes_ef;
+};
+
+typedef struct hdd_staid_hash_node
+{
+    hdd_list_node_t node;
+    v_U8_t sta_id;
+    v_MACADDR_t mac_addr;
+}hdd_staid_hash_node_t;
+
+/* sta_id hash related APIs */
+VOS_STATUS hdd_sta_id_hash_attach(hdd_adapter_t *pAdapter);
+VOS_STATUS hdd_sta_id_hash_detach(hdd_adapter_t *pAdapter);
+int hdd_sta_id_hash_calculate_index(hdd_adapter_t *pAdapter,
+                               v_MACADDR_t *mac_addr_in);
+VOS_STATUS hdd_sta_id_hash_add_entry(hdd_adapter_t *pAdapter,
+                                    v_U8_t sta_id, v_MACADDR_t *mac_addr);
+VOS_STATUS hdd_sta_id_hash_remove_entry(hdd_adapter_t *pAdapter,
+                                       v_U8_t sta_id, v_MACADDR_t *mac_addr);
+int hdd_sta_id_find_from_mac_addr(hdd_adapter_t *pAdapter,
+                                  v_MACADDR_t *mac_addr_in);
+void hdd_init_frame_logging(hdd_context_t *pHddCtx);
+
+int hdd_enable_disable_ca_event(hdd_context_t *pHddCtx,
+                                tANI_U8* command, tANI_U8 cmd_len);
+void hdd_indicate_mgmt_frame(tSirSmeMgmtFrameInd *frame_ind);
+
+#ifdef WLAN_FEATURE_LINK_LAYER_STATS
+/**
+ * hdd_init_ll_stats_ctx() - initialize link layer stats context
+ * @hdd_ctx: Pointer to hdd context
+ *
+ * Return: none
+ */
+static inline void hdd_init_ll_stats_ctx(hdd_context_t *hdd_ctx)
+{
+    init_completion(&hdd_ctx->ll_stats_context.response_event);
+    hdd_ctx->ll_stats_context.request_bitmap = 0;
+
+     return;
+}
+#else
+static inline void hdd_init_ll_stat_ctx(void)
+{
+    return;
+}
+#endif /* WLAN_FEATURE_LINK_LAYER_STATS */
+
+/**
+ * hdd_init_nud_stats_ctx() - initialize NUD stats context
+ * @hdd_ctx: Pointer to hdd context
+ *
+ * Return: none
+ */
+static inline void hdd_init_nud_stats_ctx(hdd_context_t *hdd_ctx)
+{
+    init_completion(&hdd_ctx->nud_stats_context.response_event);
+    return;
+}
+
+void hdd_initialize_adapter_common(hdd_adapter_t *pAdapter);
+void hdd_wlan_free_wiphy_channels(struct wiphy *wiphy);
+void wlan_hdd_init_deinit_defer_scan_context(scan_context_t *scan_ctx);
+int wlan_hdd_copy_defer_scan_context(hdd_context_t *pHddCtx,
+                            struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                            struct net_device *dev,
+#endif
+                            struct cfg80211_scan_request *request);
+void wlan_hdd_schedule_defer_scan(struct work_struct *work);
+void wlan_hdd_defer_scan_init_work(hdd_context_t *pHddCtx,
+                                struct wiphy *wiphy,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+                                struct net_device *dev,
+#endif
+                                struct cfg80211_scan_request *request,
+                                unsigned long delay);
+int hdd_reassoc(hdd_adapter_t *pAdapter, const tANI_U8 *bssid,
+			const tANI_U8 channel, const handoff_src src);
+
+void wlan_hdd_start_sap(hdd_adapter_t *ap_adapter);
 
 void hdd_nullify_netdev_ops(hdd_context_t *pHddCtx);
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )

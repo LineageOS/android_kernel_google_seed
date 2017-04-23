@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -3524,4 +3524,101 @@ eHalStatus sme_RegisterBtCoexTDLSCallback
 ---------------------------------------------------------------------------*/
 tANI_BOOLEAN smeNeighborMiddleOfRoaming(tHalHandle hHal);
 
+/* ---------------------------------------------------------------------------
+
+    \fn sme_IsTdlsOffChannelValid
+    \brief To check if the channel is valid for currently established domain
+    This is a synchronous API.
+
+    \param hHal - The handle returned by macOpen.
+    \param channel - channel to verify
+
+    \return TRUE/FALSE, TRUE if channel is valid
+
+  -------------------------------------------------------------------------------*/
+tANI_BOOLEAN sme_IsTdlsOffChannelValid(tHalHandle hHal, tANI_U8 channel);
+
+/* --------------------------------------------------------------------------
+
+    \fn sme_IsCoexScoIndicationSet
+    \brief To check if the BTC module in fwr has sent the SCO
+           indication to host or not
+
+    \param hHal - The handle returned by macOpen.
+    \return TRUE - Sco call in progress FALSE- No SCO call in progress
+
+  --------------------------------------------------------------------------*/
+tANI_BOOLEAN sme_IsCoexScoIndicationSet(tHalHandle hHal);
+
+eHalStatus sme_SetMiracastVendorConfig(tHalHandle hHal,
+                               tANI_U32 iniNumBuffAdvert,
+                                      tANI_U32 set_value);
+
+void sme_SetDefDot11Mode(tHalHandle hHal);
+
+/* ---------------------------------------------------------------------------
+    \fn sme_SetTdls2040BSSCoexistence
+    \brief  API to enable or disable 20_40 BSS Coexistence IE in TDLS frames.
+
+    \param  isEnabled - Enable or Disable.
+    \- return VOS_STATUS_SUCCES
+   -------------------------------------------------------------------------*/
+eHalStatus sme_SetTdls2040BSSCoexistence(tHalHandle hHal, tANI_S32 isEnabled);
+
+/* ---------------------------------------------------------------------------
+    \fn sme_SetRtsCtsHtVht
+    \brief  API to to enable/disable RTS/CTS for different modes.
+
+    \param  set_value - Bit mask value to enable RTS/CTS for different modes.
+    \- return VOS_STATUS_SUCCES if INdication is posted to
+       WDA else return eHAL_STATUS_FAILURE
+    -------------------------------------------------------------------------*/
+eHalStatus sme_SetRtsCtsHtVht(tHalHandle hHal, tANI_U32 set_value);
+
+tANI_BOOLEAN sme_handleSetFccChannel(tHalHandle hHal,
+                                      tANI_U8 fcc_constraint,
+                                      v_U32_t scan_pending);
+
+eHalStatus sme_DeleteAllTDLSPeers(tHalHandle hHal, uint8_t sessionId);
+eHalStatus sme_fatal_event_logs_req(tHalHandle hHal, tANI_U32 is_fatal,
+                               tANI_U32 indicator, tANI_U32 reason_code,
+                               tANI_BOOLEAN dump_vos_trace);
+
+eHalStatus sme_enableDisableChanAvoidIndEvent(tHalHandle hHal,
+                                              tANI_U8 set_value);
+
+/* ---------------------------------------------------------------------------
+    \fn sme_set_wificonfig_params
+    \brief  API to set WifiConfiguration Parameters.
+
+    \param  wifi_config_param - Wificonfig parameter 1.Averaging factor 2. Guard time
+    \- return VOS_STATUS_SUCCES if INdication is posted to
+       WDA else return eHAL_STATUS_FAILURE
+    -------------------------------------------------------------------------*/
+
+eHalStatus sme_set_wificonfig_params(tHalHandle hHal, tSetWifiConfigParams *req);
+eHalStatus sme_getRegInfo(tHalHandle hHal, tANI_U8 chanId,
+                          tANI_U32 *regInfo1, tANI_U32 *regInfo2);
+eHalStatus sme_GetCurrentAntennaIndex(tHalHandle hHal,
+                                      tCsrAntennaIndexCallback callback,
+                                      void *pContext, tANI_U8 sessionId);
+
+eHalStatus sme_setBcnMissPenaltyCount(tHalHandle hHal,
+                                      tModifyRoamParamsReqParams *params);
+eHalStatus sme_remove_bssid_from_scan_list(tHalHandle hal,
+	tSirMacAddr bssid);
+void sme_set_mgmt_frm_via_wq5(tHalHandle hHal,
+        tANI_BOOLEAN sendMgmtPktViaWQ5);
+eHalStatus sme_update_cfg_int_param(tHalHandle hHal, tANI_U32 cfg_id);
+
+/* ARP DEBUG STATS */
+eHalStatus sme_set_nud_debug_stats(tHalHandle hHal,
+                               psetArpStatsParams pSetStatsParam);
+eHalStatus sme_get_nud_debug_stats(tHalHandle hHal,
+                               pgetArpStatsParams pGetStatsParam);
+eHalStatus sme_test_con_alive(tHalHandle hHal);
+eHalStatus sme_get_con_alive(tHalHandle hHal,
+                             pgetConStatusParams conStatusParams);
+eHalStatus sme_test_con_delba(tHalHandle hHal, uint8_t sta_id,
+                              uint8_t session_id);
 #endif //#if !defined( __SME_API_H )

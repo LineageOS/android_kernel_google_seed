@@ -895,6 +895,22 @@ typedef struct
   v_BOOL_t                  isBMPS;
   /* Whether WDA_DS_TX_START_XMIT msg is pending or not */
   v_BOOL_t   isTxTranmitMsgPending;
+
+#ifdef WLAN_FEATURE_RMC
+  WLANTL_RMC_SESSION *rmcSession[WLANTL_RMC_HASH_TABLE_SIZE];
+  vos_lock_t rmcLock;
+  v_U8_t multicastDuplicateDetectionEnabled;
+  v_U8_t rmcDataPathEnabled;
+  v_U32_t mcastDupCnt;
+#endif
+  WLANTL_MonRxCBType           pfnMonRx;
+  v_BOOL_t              isConversionReq;
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+  WLANTL_RoamMonitorType gDsRxRoamStats;
+#endif
+
+  uint8_t track_arp;
+  uint32_t txbd_token;
 }WLANTL_CbType;
 
 /*==========================================================================

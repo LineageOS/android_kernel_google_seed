@@ -7960,19 +7960,8 @@ static void __hdd_set_multicast_list(struct net_device *dev)
 
       pAdapter->mc_addr_list.mc_cnt = mc_count;
 
-      netdev_for_each_mc_addr(ha, dev) {
-         if (i == mc_count)
-            break;
-         memset(&(pAdapter->mc_addr_list.addr[i][0]), 0, ETH_ALEN);
-         memcpy(&(pAdapter->mc_addr_list.addr[i][0]), ha->addr, ETH_ALEN);
-         hddLog(VOS_TRACE_LEVEL_INFO, "%s: mlist[%d] = "MAC_ADDRESS_STR,
-               __func__, i,
-               MAC_ADDR_ARRAY(pAdapter->mc_addr_list.addr[i]));
-         i++;
-      }
-   }
-   return;
-}
+   hdd_init_ll_stats_ctx(pHddCtx);
+   hdd_init_nud_stats_ctx(pHddCtx);
 
 static void hdd_set_multicast_list(struct net_device *dev)
 {

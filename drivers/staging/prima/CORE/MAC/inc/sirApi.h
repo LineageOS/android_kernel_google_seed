@@ -2872,11 +2872,10 @@ typedef struct sSmeDelBAPeerInd
     // Message Type
     tANI_U16 mesgType;
 
-    tSirMacAddr bssId;//BSSID 
-
     // Message Length
     tANI_U16 mesgLen;
 
+    tSirMacAddr bssId;//BSSID
     // Station Index
     tANI_U16 staIdx;
 
@@ -3682,6 +3681,160 @@ typedef struct sSirWlanSetRxpFilters
     tANI_U8 setMcstBcstFilter;
 }tSirWlanSetRxpFilters,*tpSirWlanSetRxpFilters;
 
+
+typedef struct sSirUpdateCfgIntParam
+{
+    tANI_U32 cfgId;
+}tSirUpdateCfgIntParam,*tpSirUpdateCfgIntParam;
+
+typedef struct
+{
+  //FW mail box address
+  uint64 logMailBoxAddr;
+  tANI_U32 status;
+  //Logging mail box version
+  tANI_U8 logMailBoxVer;
+  //Qshrink is enabled
+  tANI_U8 logCompressEnabled;
+  /* used to tell fwr mem dump size */
+  tANI_U32 fw_mem_dump_max_size;
+  //Reserved for future purpose
+  tANI_U32 reserved1;
+  tANI_U32 reserved2;
+}tAniLoggingInitRsp, *tpAniLoggingInitRsp;
+
+/**
+ * struct rsp_stats - arp packet stats
+ * @status: success or failure
+ * @tx_fw_cnt: tx packets count
+ * @tx_ack_cnt: tx acknowledgement count
+ */
+typedef struct {
+   uint32_t status;
+   uint16_t dad;
+   uint16_t tx_fw_cnt;
+   uint16_t tx_ack_cnt;
+   uint16_t rx_fw_cnt;
+} rsp_stats;
+
+typedef void(*setArpStatsReqCb)(void *data, VOS_STATUS rsp);
+
+/**
+ * struct setArpStatsParams - set/reset arp stats
+ * @flag: enable/disable stats
+ * @pkt_type: type of packet(1 - arp)
+ * @ip_addr: subnet ipv4 address in case of encrypted packets
+ * @rsp_cb_fn: FW response callback api
+ * @data_ctx: parameter for callback api
+ */
+typedef struct {
+   uint8_t flag;
+   uint8_t pkt_type;
+   uint32_t ip_addr;
+   setArpStatsReqCb rsp_cb_fn;
+   void *data_ctx;
+} setArpStatsParams, *psetArpStatsParams;
+
+typedef void(*getArpStatsReqCb)(void *data, rsp_stats *rsp);
+/**
+ * struct getArpStatsParams - get arp stats from firmware
+ * @pkt_type: packet type(1 - ARP)
+ * @get_rsp_cb_fn: FW response callback api
+ * @data_ctx: parameter for callback api
+ */
+typedef struct {
+   uint8_t pkt_type;
+   getArpStatsReqCb get_rsp_cb_fn;
+   void *data_ctx;
+} getArpStatsParams, *pgetArpStatsParams;
+
+typedef void(*FWLoggingInitReqCb)(void *fwlogInitCbContext, tAniLoggingInitRsp *pRsp);
+typedef void ( *tGetFrameLogCallback) (void *pContext);
+typedef void(*RssiMonitorReqCb)(void *rssiMonitorCbContext, VOS_STATUS status);
+typedef void(*pktFilterReqCb)(void *data, tANI_U32 status);
+
+
+typedef struct sAniGetFrameLogReq
+{
+    tANI_U16               msgType;
+    tANI_U16               msgLen;
+    tANI_U8                getFrameLogCmdFlag;
+} tAniGetFrameLogReq,      *tpAniGetFrameLogReq;
+
+/**
+ * struct s_ani_set_tx_max_pwr - Req params to set max tx power
+ * @bssid: bssid to set the power cap for
+ * @self_mac_addr:self mac address
+ * @power: power to set in dB
+ */
+struct s_ani_set_tx_max_pwr
+{
+    tSirMacAddr   bssid;
+    tSirMacAddr   self_sta_mac_addr;
+    tPowerdBm     power;
+};
+
+
+
+typedef struct sSirFWLoggingInitParam
+{
+    tANI_U8                enableFlag;
+    tANI_U8                frameType;
+    tANI_U8                frameSize;
+    tANI_U8                bufferMode;
+    tANI_U8                continuousFrameLogging;
+    tANI_U8                minLogBufferSize;
+    tANI_U8                maxLogBufferSize;
+    FWLoggingInitReqCb     fwlogInitCallback;
+    void                   *fwlogInitCbContext;
+}tSirFWLoggingInitParam,*tpSirFWLoggingInitParam;
+
+/**
+ * struct sir_allowed_action_frames - Parameters to set Allowed action frames
+ * @bitmask: Bits to convey the allowed action frames
+ * @reserved: For future use
+ */
+struct sir_allowed_action_frames {
+    uint32_t bitmask;
+    uint32_t reserved;
+};
+
+/*
+ * struct rssi_monitor_req - rssi monitoring
+ * @request_id: request id
+ * @session_id: session id
+ * @min_rssi: minimum rssi
+ * @max_rssi: maximum rssi
+ * @control: flag to indicate start or stop
+ */
+typedef struct sSirRssiMonitorReq
+{
+    tANI_U32               requestId;
+    tANI_U32               sessionId;
+    tANI_S8                minRssi;
+    tANI_S8                maxRssi;
+    tANI_U8                currentBssId[6];
+    RssiMonitorReqCb       rssiMonitorCallback;
+    void                   *rssiMonitorCbContext;
+}tSirRssiMonitorReq, *tpSirRssiMonitorReq;
+
+
+/**
+ * struct rssi_breach_event - rssi breached event structure
+ * @request_id: request id
+ * @curr_rssi: current rssi
+ * @curr_bssid: current bssid
+ */
+struct rssi_breach_event {
+        tANI_U32     request_id;
+        v_MACADDR_t  curr_bssid;
+        tANI_S8      curr_rssi;
+};
+
+typedef struct sSirFatalEventLogsReqParam
+{
+    tANI_U32 reason_code;
+}tSirFatalEventLogsReqParam, *tpSirFatalEventLogsReqParam;
 
 #ifdef FEATURE_WLAN_SCAN_PNO
 //
@@ -5645,5 +5798,120 @@ typedef enum eSirAbortScanStatus
     eSIR_ABORT_ACTIVE_SCAN_LIST_NOT_EMPTY,
     eSIR_ABORT_SCAN_FAILURE
 }tSirAbortScanStatus;
+
+/* Max number of rates allowed in Supported Rates IE */
+#define MAX_NUM_SUPPORTED_RATES (8)
+
+typedef struct sSirSmeUpdateMaxRateParams
+{
+    tANI_U32        maxRateFlag;
+    tANI_U8         smeSessionId;
+}tSirSmeUpdateMaxRateParams, *tpSirSmeUpdateMaxRateParams;
+
+typedef struct
+{
+    tANI_U32 event_data_len;
+    tANI_U8  event_data[1];
+} tSirNanEvent, *tpSirNanEvent;
+
+typedef struct
+{
+    tANI_U32 txCompleteStatus;
+    tANI_U32 txBdToken;
+}tSirTxBdStatus, *tpSirTxBdStatus;
+
+/* enable or disable 20_40 BSS Coexistence IE in TDLS frames*/
+typedef struct
+{
+    // Common for all types are requests
+    tANI_U16    msgType;    // message type is same as the request type
+    tANI_U16    msgLen;     // length of the entire request
+    tANI_U8     SetTdls2040BSSCoex; //enabled or disabled
+} tAniSetTdls2040BSSCoex, *tpAniSetTdls2040BSSCoex;
+
+/**
+ * struct sir_wifi_start_log - Structure to store the params sent to start/
+ * stop logging
+ * @ringId:        Attribute which indicates the type of logging like per packet
+ *                 statistics, connectivity etc.
+ * @verboseLevel: Verbose level which can be 0,1,2,3
+ * @flag:          Flag field for future use
+ */
+typedef struct sir_wifi_start_log {
+    tANI_U32 ringId;
+    tANI_U32 verboseLevel;
+    tANI_U32 flag;
+}tAniWifiStartLog, *tpAniWifiStartLog;
+
+typedef struct
+{
+    tANI_U16   mesgType;
+    tANI_U16   mesgLen;
+    tSirMacAddr bssid;
+}tSirDelAllTdlsPeers, *ptSirDelAllTdlsPeers;
+
+typedef void (*tSirMonModeCb)(tANI_U32 *magic, struct completion *cmpVar);
+typedef struct
+{
+    tANI_U32 *magic;
+    struct completion *cmpVar;
+    void *data;
+    tSirMonModeCb callback;
+}tSirMonModeReq, *ptSirMonModeReq;
+
+/**
+ * struct tAniFwrDumpRsp - firmware dump response details.
+ *
+ * This structure is used to store the firmware dump
+ * response from the firmware.
+ */
+typedef struct
+{
+    tANI_U32 dump_status;
+}tAniFwrDumpRsp, *tpAniFwrDumpRsp;
+
+typedef void (*FWMemDumpReqCb)(void *fwMemDumpReqContext, tAniFwrDumpRsp *dump_rsp);
+
+/**
+ * struct tAniFwrDumpReq - firmware memory dump request details.
+.*.@FWMemDumpReqCb - Associated Callback
+ *.@fwMemDumpReqContext - Callback context
+ * @reserved - reserved field 1.
+ *
+ * This structure carries information about the firmware
+ * memory dump request.
+ */
+typedef struct
+{
+    FWMemDumpReqCb  fwMemDumpReqCallback;
+    void *          fwMemDumpReqContext;
+    tANI_U32        reserved1;
+}tAniFwrDumpReq, *tpAniFwrDumpReq;
+
+/**
+* struct tSetWifiConfigParams - Structure to store the wificonfig related params
+* @paramType: 1. Average Stats factor 2. Guard type
+* @paramvalue: Value to be set in the firmware.
+* @bssId: macaddr of the connected BssId
+*/
+typedef struct
+{
+   tANI_U8  paramType;
+   tANI_U8  sessionId;
+   tANI_U32 paramValue;
+   tSirMacAddr  bssId;
+} tSetWifiConfigParams, *tpSetWifiConfigParams;
+
+typedef struct {
+   tANI_U8   param;
+   tANI_U32  value;
+} tModifyRoamParamsReqParams, * tpModifyRoamParamsReqParams;
+
+typedef void(*hdd_conAliveCb)(void *data, bool status);
+
+typedef struct {
+   hdd_conAliveCb rsp_cb_fn;
+   void *data_ctx;
+}getConStatusParams, *pgetConStatusParams;
 
 #endif /* __SIR_API_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -468,7 +468,28 @@ typedef enum
   WDI_GET_FW_STATS_REQ                           = 102,
 
   /* Send command to encrypt the given message */
-  WDI_ENCRYPT_MSG_REQ                            = 103,
+  WDI_ENCRYPT_MSG_REQ                            = 105,
+
+  WDI_FW_LOGGING_INIT_REQ                        = 106,
+  WDI_GET_FRAME_LOG_REQ                          = 107,
+  /* NAN Request */
+  WDI_NAN_REQUEST                                = 108,
+
+  WDI_MON_START_REQ                              = 109,
+  WDI_MON_STOP_REQ                               = 110,
+  WDI_FATAL_EVENT_LOGGING_REQ                    = 111,
+  WDI_FWR_MEM_DUMP_REQ                           = 112,
+  WDI_START_RSSI_MONITOR_REQ                     = 113,
+  WDI_STOP_RSSI_MONITOR_REQ                      = 114,
+  WDI_WIFI_CONFIG_SET_REQ                        = 115,
+
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+  WDI_PER_ROAM_SCAN_OFFLOAD_REQ                  = 116,
+  WDI_PER_ROAM_SCAN_TRIGGER_REQ                  = 117,
+#endif
+/* ARP DEBUG STATS */
+  WDI_FW_ARP_STATS_REQ                           = 118,
+  WDI_FW_GET_ARP_STATS_REQ                       = 119,
 
   WDI_MAX_REQ,
 
@@ -798,7 +819,28 @@ typedef enum
   WDI_GET_FW_STATS_RSP                           = 102,
 
   /* Send command to encrypt the given message */
-  WDI_ENCRYPT_MSG_RSP                            = 103,
+  WDI_ENCRYPT_MSG_RSP                            = 105,
+
+  WDI_FW_LOGGING_INIT_RSP                        = 106,
+  WDI_GET_FRAME_LOG_RSP                          = 107,
+
+  WDI_NAN_RESPONSE                               = 108,
+
+  WDI_MON_START_RSP                              = 109,
+  WDI_MON_STOP_RSP                               = 110,
+  WDI_FATAL_EVENT_LOGGING_RSP                    = 111,
+  WDI_FWR_MEM_DUMP_RSP                           = 112,
+  WDI_START_RSSI_MONITOR_RSP                     = 113,
+  WDI_STOP_RSSI_MONITOR_RSP                      = 114,
+
+  WDI_WIFI_CONFIG_SET_RSP                        = 115,
+#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
+  WDI_PER_ROAM_SCAN_OFFLOAD_RSP                  = 116,
+  WDI_PER_ROAM_SCAN_TRIGGER_RSP                  = 117,
+#endif
+  WDI_FW_ARP_STATS_RSP                           = 118,
+  WDI_FW_GET_ARP_STATS_RSP                       = 119,
+
   /*-------------------------------------------------------------------------
     Indications
      !! Keep these last in the enum if possible
@@ -6109,6 +6151,291 @@ WDI_ProcessEncryptMsgReq
 
 WDI_Status
 WDI_ProcessEncryptMsgRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process NAN Request
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessNanRequest
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process NAN Response
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessNanResponse
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+*@brief Process NAN Event function (called when
+        an indication is being received over the
+        bus from HAL)
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessNanEvent
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+
+/**
+*@brief Process Lost Link param function (called when
+        an indication is being received over the
+        bus from HAL)
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_Process_LostLinkParamInd
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_Process_RssiBreachedInd
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+
+/**
+ @brief WDI_ProcessSetRtsCtsHtvhtInd
+        Set RTS/CTS indication for diff modes.
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @return Result of the function call
+*/
+
+
+WDI_Status
+WDI_ProcessSetRtsCtsHtvhtInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMonStartReq
+(
+   WDI_ControlBlockType*  pWDICtx,
+   WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMonStartRsp
+(
+   WDI_ControlBlockType*  pWDICtx,
+   WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMonStopReq
+(
+   WDI_ControlBlockType*  pWDICtx,
+   WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessMonStopRsp
+(
+   WDI_ControlBlockType*  pWDICtx,
+   WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessEnableDisableCAEventInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessFwrMemDumpReq
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+    WDI_ProcessFwrMemDumpRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessWifiConfigReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessWificonfigSetRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+#ifdef FEATURE_OEM_DATA_SUPPORT
+/**
+ @brief WDI_ProcessStartOemDataReqIndNew -
+    Send OEM Data request new indication to FW
+
+ @param  pWDICtx : wdi context
+         pEventData : indication data
+
+ @see
+ @return none
+*/
+WDI_Status
+WDI_ProcessStartOemDataReqIndNew
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process OemDataRsp New Indication indication from FW
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessStartOemDataRspIndNew
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+#endif
+
+/**
+ @brief Process get current antenna index command
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessGetCurrentAntennaIndex
+(
+    WDI_ControlBlockType*  pWDICtx,
+    WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process get current antenna index response from FW
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessGetCurrentAntennaIndexRsp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ @brief Process set modified roam params command
+
+ @param  pWDICtx:         pointer to the WLAN DAL context
+         pEventData:      pointer to the event information structure
+
+ @see
+ @return Result of the function call
+*/
+WDI_Status
+WDI_ProcessBcnMissPenaltyCount
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+/**
+ *  WDI_ProcessSetAllowedActionFramesInd - Process Set allowed action
+ *                                         frames command
+ *
+ *  @pWDICtx: pointer to the WLAN DAL context
+ *  @pEventData: pointer to the event information structure
+ *
+ */
+WDI_Status
+WDI_ProcessSetAllowedActionFramesInd
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessSetArpStatsReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessSetArpStatsResp
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessGetArpStatsReq
+(
+  WDI_ControlBlockType*  pWDICtx,
+  WDI_EventInfoType*     pEventData
+);
+
+WDI_Status
+WDI_ProcessGetArpStatsResp
 (
   WDI_ControlBlockType*  pWDICtx,
   WDI_EventInfoType*     pEventData

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -3516,6 +3516,12 @@ static wpt_status dxeTXPushFrame
          //HDXE_ASSERT(0);
       }
 
+      if(wpalIsArpPkt(palPacket))
+      {
+         HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                  "%s :ARP packet", __func__);
+      }
+
       /* Everything is ready
        * Trigger to start DMA */
       status = wpalWriteRegister(channelEntry->channelRegister.chDXECtrlRegAddr,
@@ -3799,7 +3805,14 @@ static wpt_status dxeTXCompFrame
             }
             return status;
          }
-#endif /* FEATURE_R33D */
+
+         if(wpalIsArpPkt(currentCtrlBlk->xfrFrame))
+         {
+             HDXE_MSG(eWLAN_MODULE_DAL_DATA, eWLAN_PAL_TRACE_LEVEL_ERROR,
+                      "%s :ARP packet DMA-ed ", __func__);
+             wpalUpdateTXArpFWdeliveredStats();
+         }
+
          hostCtxt->txCompCB(hostCtxt->clientCtxt,
                             currentCtrlBlk->xfrFrame,
                             eWLAN_PAL_STATUS_SUCCESS);
