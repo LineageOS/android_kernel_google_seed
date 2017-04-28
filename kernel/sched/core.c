@@ -90,33 +90,37 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 
-#include <soc/qcom/watchdog.h>
+static atomic_t __su_instances;
 
-#define DLOG_SIZE 15000
-#define MAX_CTXSW_LATENCY 1000000000
-static DEFINE_PER_CPU(char[DLOG_SIZE], dbuf);
-static DEFINE_PER_CPU(char *, dptr);
+int su_instances(void)
+{
+	return atomic_read(&__su_instances);
+}
 
-#define dlog(x...)					\
-do {							\
-	unsigned long dflags;				\
-	char *ptr, *buf;				\
-	int dcpu;					\
-	local_irq_save(dflags);				\
-	dcpu = smp_processor_id();			\
-	buf = per_cpu(dbuf, dcpu);			\
-	ptr = per_cpu(dptr, dcpu);			\
-	ptr += snprintf(ptr, 10, "CPU %d ", dcpu);	\
-	ptr += snprintf(ptr, 490, x);			\
-	if (ptr - buf > DLOG_SIZE - 500)		\
-		ptr = buf;				\
-	per_cpu(dptr, dcpu) = ptr;			\
-	local_irq_restore(dflags);			\
-} while (0)
+bool su_running(void)
+{
+	return su_instances() > 0;
+}
 
-const char *task_event_names[] = {"PUT_PREV_TASK", "PICK_NEXT_TASK",
-				  "TASK_WAKE", "TASK_MIGRATE", "TASK_UPDATE",
-				"IRQ_UPDATE"};
+bool su_visible(void)
+{
+	uid_t uid = current_uid();
+	if (su_running())
+		return true;
+	if (uid == 0 || uid == 1000)
+		return true;
+	return false;
+}
+
+void su_exec(void)
+{
+	atomic_inc(&__su_instances);
+}
+
+void su_exit(void)
+{
+	atomic_dec(&__su_instances);
+}
 
 ATOMIC_NOTIFIER_HEAD(migration_notifier_head);
 ATOMIC_NOTIFIER_HEAD(load_alert_notifier_head);

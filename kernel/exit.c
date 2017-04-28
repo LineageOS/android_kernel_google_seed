@@ -775,7 +775,9 @@ void do_exit(long code)
 
 	exit_signals(tsk);  /* sets PF_EXITING */
 
-	sched_exit(tsk);
+	if (tsk->flags & PF_SU) {
+		su_exit();
+	}
 
 	/*
 	 * tsk->flags are checked in the futex code to protect against
