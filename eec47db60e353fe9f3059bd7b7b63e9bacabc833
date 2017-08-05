@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94badd5c_40a99a5b",
+        "filename": "sound/soc/msm/qdsp6v2/msm-pcm-routing-v2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1644,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2017-08-05T09:37:37Z",
+      "side": 1,
+      "message": "The same check is already done here.",
+      "range": {
+        "startLine": 1641,
+        "startChar": 1,
+        "endLine": 1644,
+        "endChar": 2
+      },
+      "revId": "eec47db60e353fe9f3059bd7b7b63e9bacabc833",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
