@@ -27,18 +27,23 @@
 	model = "Qualcomm Technologies, Inc. MSM 8916 L8150";
 	compatible = "qcom,msm8916-l8150", "qcom,msm8916-qrd", "qcom,msm8916", "qcom,qrd";
 	qcom,board-id = <0x1000b 9> , <0x1010b 9> , <0x3010b 9>;
+
+        aliases {
+		i2c1 = &i2c_1; /* I2C1 controller device */
+		i2c3 = &i2c_3; /* I2C3 controller device */
+	};
 };
 
 &soc {
 
-	sound {
+       sound {
 		compatible = "qcom,msm8x16-audio-codec";
 		qcom,model = "msm8x16-skui-snd-card";
 		qcom,msm-snd-card-id = <0>;
 		qcom,msm-ext-pa = "primary";
 		qcom,msm-codec-type = "internal";
 		qcom,msm-mbhc-hphl-swh = <1>;
-		qcom,msm-mbhc-gnd-swh = <1>;
+		qcom,msm-mbhc-gnd-swh = <0>;
 		qcom,msm-hs-micbias-type = "internal";
 		qcom,audio-routing =
 			"RX_BIAS", "MCLK",
@@ -65,7 +70,8 @@
 				<&dai_mi2s0>, <&dai_mi2s1>, <&dai_mi2s2>, <&dai_mi2s3>,
 				<&sb_0_rx>, <&sb_0_tx>, <&sb_1_rx>, <&sb_1_tx>,
 				<&sb_3_rx>, <&sb_3_tx>, <&sb_4_rx>, <&sb_4_tx>,
-				<&bt_sco_rx>, <&bt_sco_tx>, <&int_fm_rx>, <&int_fm_tx>,
+				<&bt_sco_rx>, <&bt_sco_tx>, <&bt_a2dp_rx>,
+				<&int_fm_rx>, <&int_fm_tx>,
 				<&afe_pcm_rx>, <&afe_pcm_tx>, <&afe_proxy_rx>, <&afe_proxy_tx>,
 				<&incall_record_rx>, <&incall_record_tx>, <&incall_music_rx>,
 				<&incall_music_2_rx>;
@@ -77,13 +83,62 @@
 				"msm-dai-q6-dev.16390", "msm-dai-q6-dev.16391",
 				"msm-dai-q6-dev.16392", "msm-dai-q6-dev.16393",
 				"msm-dai-q6-dev.12288", "msm-dai-q6-dev.12289",
-				"msm-dai-q6-dev.12292", "msm-dai-q6-dev.12293",
-				"msm-dai-q6-dev.224", "msm-dai-q6-dev.225",
-				"msm-dai-q6-dev.241", "msm-dai-q6-dev.240",
-				"msm-dai-q6-dev.32771", "msm-dai-q6-dev.32772",
-				"msm-dai-q6-dev.32773", "msm-dai-q6-dev.32770";
+				"msm-dai-q6-dev.12290", "msm-dai-q6-dev.12292",
+				"msm-dai-q6-dev.12293", "msm-dai-q6-dev.224",
+				"msm-dai-q6-dev.225", "msm-dai-q6-dev.241",
+				"msm-dai-q6-dev.240", "msm-dai-q6-dev.32771",
+				"msm-dai-q6-dev.32772", "msm-dai-q6-dev.32773",
+				"msm-dai-q6-dev.32770";
 		asoc-codec = <&stub_codec>, <&pm8916_tombak_dig>;
 		asoc-codec-names = "msm-stub-codec.1", "tombak_codec";
+	};
+
+        i2c_1: i2c@78b5000 { /* BLSP1 QUP1 */
+			   compatible = "qcom,i2c-msm-v2";
+			   #address-cells = <1>;
+			   #size-cells = <0>;
+			   reg-names = "qup_phys_addr";
+			   reg = <0x78b5000 0x600>;
+			   interrupt-names = "qup_irq";
+			   interrupts = <0 95 0>;
+			   clocks = <&clock_gcc clk_gcc_blsp1_ahb_clk>,
+					  <&clock_gcc clk_gcc_blsp1_qup1_i2c_apps_clk>;
+			   clock-names = "iface_clk", "core_clk";
+			   qcom,clk-freq-out = <400000>;
+			   qcom,clk-freq-in  = <19200000>;
+			   pinctrl-names = "i2c_active", "i2c_sleep";
+			   pinctrl-0 = <&i2c_1_active>;
+			   pinctrl-1 = <&i2c_1_sleep>;
+			   qcom,noise-rjct-scl = <0>;
+			   qcom,noise-rjct-sda = <0>;
+			   dmas = <&dma_blsp1 4 64 0x20000020 0x20>,
+				<&dma_blsp1 5 32 0x20000020 0x20>;
+			   dma-names = "tx", "rx";
+			   qcom,master-id = <86>;
+	};
+
+	i2c_3: i2c@78b7000 { /* BLSP3 QUP3 */
+		compatible = "qcom,i2c-msm-v2";
+	#address-cells = <1>;
+	#size-cells = <0>;
+		reg-names = "qup_phys_addr";
+		reg = <0x78b7000 0x600>;
+		interrupt-names = "qup_irq";
+		interrupts = <0 97 0>;
+		clocks = <&clock_gcc clk_gcc_blsp1_ahb_clk>,
+			 <&clock_gcc clk_gcc_blsp1_qup3_i2c_apps_clk>;
+		clock-names = "iface_clk", "core_clk";
+		qcom,clk-freq-out = <100000>;
+		qcom,clk-freq-in  = <19200000>;
+		pinctrl-names = "i2c_active", "i2c_sleep";
+		pinctrl-0 = <&i2c_3_active>;
+		pinctrl-1 = <&i2c_3_sleep>;
+		qcom,noise-rjct-scl = <0>;
+		qcom,noise-rjct-sda = <0>;
+		dmas = <&dma_blsp1 8 64 0x20000020 0x20>,
+			<&dma_blsp1 9 32 0x20000020 0x20>;
+		dma-names = "tx", "rx";
+		qcom,master-id = <86>;
 	};
 
 	gen-vkeys {
